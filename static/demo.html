@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON to Struct Converter</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
+    <style>
+        :root {
+            --primary-color: #409eff;
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --border-color: #e4e7ed;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+            font-weight: 600;
+        }
+
+        .header p {
+            margin: 12px 0 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #303133;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title i {
+            color: var(--primary-color);
+        }
+
+        .code-area {
+            position: relative;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .code-header {
+            background: #f8f9fa;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .code-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        pre {
+            margin: 0;
+            padding: 20px;
+            max-height: 600px;
+            overflow: auto;
+            background: #fafafa;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .control-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .tag-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .language-selector {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .language-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--border-color);
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .language-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #337ecc;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #f0f2f5;
+            color: #606266;
+        }
+
+        .btn-secondary:hover {
+            background: #e4e6e9;
+        }
+
+        .btn-success {
+            background: #67c23a;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #5daf34;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: #67c23a;
+            color: white;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .stats {
+            display: flex;
+            gap: 24px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            color: #606266;
+            font-size: 14px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            background: #e8f4ff;
+            color: var(--primary-color);
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .toggle-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 16px 0;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .toggle-icon {
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-icon.open {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>🔮 JSON to Struct Converter</h1>
+            <p>智能生成 Go、Java、TypeScript 等语言的结构体定义</p>
+        </div>
+
+        <!-- 控制面板 -->
+        <div class="control-panel">
+            <div style="flex: 1; min-width: 200px;">
+                <div class="card-title">🎯 目标语言</div>
+                <div class="language-selector">
+                    <button
+                            v-for="lang in languages"
+                            :key="lang.value"
+                            @click="selectLanguage(lang.value)"
+                            :class="['language-btn', { active: selectedLanguage === lang.value }]"
+                    >
+                        {{ lang.label }}
+                    </button>
+                </div>
+            </div>
+
+            <div style="flex: 1; min-width: 200px;">
+                <div class="card-title">⚙️ 转换选项</div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <el-checkbox v-model="options.snakeCase" label="蛇形命名" />
+                    <el-checkbox v-model="options.publicFields" label="公开字段" />
+                    <el-input
+                            v-model="options.rootName"
+                            placeholder="根结构体名称"
+                            style="width: 200px;"
+                    />
+                </div>
+            </div>
+        </div>
+
+        <!-- Go标签选项（仅Go语言显示） -->
+        <div v-if="selectedLanguage === 'go'" class="card">
+            <div class="card-title">🏷️ Go 标签选项</div>
+            <div class="tag-options">
+                <el-checkbox-group v-model="goTags" size="large">
+                    <el-checkbox label="json" value="json">
+                        <span class="badge">json:"field"</span>
+                    </el-checkbox>
+                    <el-checkbox label="gorm" value="gorm">
+                        <span class="badge">gorm:"column:field"</span>
+                    </el-checkbox>
+                    <el-checkbox label="mapstructure" value="mapstructure">
+                        <span class="badge">mapstructure:"field"</span>
+                    </el-checkbox>
+                    <el-checkbox label="validate" value="validate">
+                        <span class="badge">validate:"required"</span>
+                    </el-checkbox>
+                    <el-checkbox label="yaml" value="yaml">
+                        <span class="badge">yaml:"field"</span>
+                    </el-checkbox>
+                    <el-checkbox label="xml" value="xml">
+                        <span class="badge">xml:"field"</span>
+                    </el-checkbox>
+                </el-checkbox-group>
+            </div>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <!-- 输入区 -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="el-icon-edit"></i>
+                    输入 JSON
+                </div>
+                <div class="code-area">
+                    <div class="code-header">
+                        <span>JSON 数据</span>
+                        <div class="code-actions">
+                            <button class="btn btn-secondary" @click="formatJson">
+                                <i class="el-icon-refresh"></i>格式化
+                            </button>
+                            <button class="btn btn-secondary" @click="loadExample">
+                                <i class="el-icon-document"></i>示例
+                            </button>
+                        </div>
+                    </div>
+                    <div style="position: relative;">
+                            <textarea
+                                    v-model="inputJson"
+                                    @input="convertJson"
+                                    placeholder='输入 JSON 数据，例如：
+{
+  "name": "John",
+  "age": 30,
+  "email": "john@example.com",
+  "address": {
+    "street": "123 Main St",
+    "city": "New York"
+  }
+}'
+                                    style="
+                                    width: 100%;
+                                    height: 400px;
+                                    padding: 20px;
+                                    border: none;
+                                    font-family: 'JetBrains Mono', monospace;
+                                    font-size: 14px;
+                                    line-height: 1.5;
+                                    resize: vertical;
+                                    outline: none;
+                                    background: #fafafa;
+                                "
+                            ></textarea>
+                        <div v-if="jsonError" style="
+                                position: absolute;
+                                bottom: 10px;
+                                right: 10px;
+                                background: #f56c6c;
+                                color: white;
+                                padding: 4px 8px;
+                                border-radius: 4px;
+                                font-size: 12px;
+                            ">
+                            {{ jsonError }}
+                        </div>
+                    </div>
+                </div>
+                <div class="stats">
+                    <div class="stat-item">
+                        <i class="el-icon-document"></i>
+                        长度: {{ inputJson.length }} 字符
+                    </div>
+                    <div class="stat-item">
+                        <i class="el-icon-tickets"></i>
+                        行数: {{ inputJson.split('\n').length }}
+                    </div>
+                    <div class="stat-item">
+                        <i class="el-icon-time"></i>
+                        更新时间: {{ lastUpdate }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 输出区 -->
+            <div class="card">
+                <div class="card-title">
+                    <i class="el-icon-document"></i>
+                    生成代码
+                    <span style="margin-left: auto; font-size: 14px; color: #909399;">
+                            {{ languageNames[selectedLanguage] }}
+                        </span>
+                </div>
+                <div class="code-area">
+                    <div class="code-header">
+                        <span>{{ languageNames[selectedLanguage] }} 结构体</span>
+                        <div class="code-actions">
+                            <button class="btn btn-success" @click="copyCode">
+                                <i class="el-icon-document-copy"></i>复制
+                            </button>
+                            <button class="btn btn-primary" @click="downloadCode">
+                                <i class="el-icon-download"></i>下载
+                            </button>
+                        </div>
+                    </div>
+                    <pre><code class="hljs" :class="selectedLanguage" ref="codeOutput">{{ outputCode }}</code></pre>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" @click="resetAll">
+                        <i class="el-icon-delete"></i>重置所有
+                    </button>
+                    <button class="btn btn-primary" @click="shareCode">
+                        <i class="el-icon-share"></i>分享
+                    </button>
+                    <button class="btn btn-success" @click="runInPlayground">
+                        <i class="el-icon-video-play"></i>在线运行
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 使用说明 -->
+        <div class="card">
+            <div class="toggle-section" @click="toggleInstructions">
+                <div class="card-title">
+                    <i class="el-icon-info"></i>
+                    使用说明
+                </div>
+                <i class="el-icon-arrow-down toggle-icon" :class="{ open: showInstructions }"></i>
+            </div>
+            <div v-if="showInstructions" style="padding: 0 20px 20px;">
+                <ol style="color: #606266; line-height: 1.8;">
+                    <li>在左侧输入 JSON 数据，或点击"示例"加载示例数据</li>
+                    <li>选择目标编程语言（Go、Java、TypeScript 等）</li>
+                    <li>对于 Go 语言，可选择需要添加的标签类型</li>
+                    <li>配置其他选项（命名风格、字段可见性等）</li>
+                    <li>生成的代码会自动显示在右侧，支持复制和下载</li>
+                    <li>可通过"分享"功能生成可分享的链接</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 提示 -->
+    <div v-if="showToast" class="toast">
+        {{ toastMessage }}
+    </div>
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/go.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/java.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/typescript.min.js"></script>
+<script>
+    const { createApp, ref, computed, watch, onMounted, nextTick } = Vue;
+    const { ElCheckbox, ElCheckboxGroup, ElInput } = ElementPlus;
+
+    createApp({
+        components: {
+            ElCheckbox,
+            ElCheckboxGroup,
+            ElInput
+        },
+        setup() {
+            // 状态管理
+            const inputJson = ref('');
+            const outputCode = ref('');
+            const selectedLanguage = ref('go');
+            const goTags = ref(['json', 'gorm']);
+            const jsonError = ref('');
+            const showToast = ref(false);
+            const toastMessage = ref('');
+            const lastUpdate = ref('');
+            const showInstructions = ref(true);
+
+            // 配置选项
+            const options = ref({
+                snakeCase: false,
+                publicFields: true,
+                rootName: 'AutoGenerated'
+            });
+
+            // 语言配置
+            const languages = [
+                { value: 'go', label: 'Go', icon: '⚡' },
+                { value: 'java', label: 'Java', icon: '☕' },
+                { value: 'typescript', label: 'TypeScript', icon: '📘' },
+                { value: 'python', label: 'Python', icon: '🐍' },
+                { value: 'rust', label: 'Rust', icon: '🦀' },
+                { value: 'kotlin', label: 'Kotlin', icon: '📱' }
+            ];
+
+            const languageNames = {
+                go: 'Go',
+                java: 'Java',
+                typescript: 'TypeScript',
+                python: 'Python',
+                rust: 'Rust',
+                kotlin: 'Kotlin'
+            };
+
+            // 工具函数
+            const toSnakeCase = (str) => {
+                return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+            };
+
+            const toCamelCase = (str) => {
+                return str.replace(/([-_][a-z])/g, group =>
+                    group.toUpperCase().replace('-', '').replace('_', '')
+                );
+            };
+
+            const toPascalCase = (str) => {
+                const camel = toCamelCase(str);
+                return camel.charAt(0).toUpperCase() + camel.slice(1);
+            };
+
+            const formatFieldName = (name) => {
+                if (options.value.snakeCase) {
+                    return toSnakeCase(name);
+                }
+                return name;
+            };
+
+            // 获取Go类型
+            const getGoType = (value) => {
+                if (value === null) return 'interface{}';
+                if (Array.isArray(value)) {
+                    if (value.length > 0) {
+                        return `[]${getGoType(value[0])}`;
+                    }
+                    return '[]interface{}';
+                }
+                if (typeof value === 'object' && value !== null) {
+                    return toPascalCase(options.value.rootName) + toPascalCase(value.constructor.name);
+                }
+                switch (typeof value) {
+                    case 'string': return 'string';
+                    case 'number': return Number.isInteger(value) ? 'int' : 'float64';
+                    case 'boolean': return 'bool';
+                    default: return 'interface{}';
+                }
+            };
+
+            // 生成Go标签
+            const generateGoTags = (fieldName) => {
+                if (goTags.value.length === 0) return '';
+
+                const tags = goTags.value.map(tag => {
+                    switch (tag) {
+                        case 'json':
+                            return `json:"${fieldName}"`;
+                        case 'gorm':
+                            return `gorm:"column:${fieldName}"`;
+                        case 'mapstructure':
+                            return `mapstructure:"${fieldName}"`;
+                        case 'validate':
+                            return `validate:"required"`;
+                        case 'yaml':
+                            return `yaml:"${fieldName}"`;
+                        case 'xml':
+                            return `xml:"${fieldName}"`;
+                        default:
+                            return '';
+                    }
+                }).filter(tag => tag);
+
+                return tags.length > 0 ? ' `' + tags.join(' ') + '`' : '';
+            };
+
+            // 生成Go结构体
+            const generateGoStruct = (obj, name = 'Root') => {
+                const structName = name === 'Root' ? toPascalCase(options.value.rootName) : toPascalCase(name);
+                let result = `type ${structName} struct {\n`;
+
+                for (const [key, value] of Object.entries(obj)) {
+                    const fieldName = options.value.publicFields ? toPascalCase(key) : toCamelCase(key);
+                    const fieldType = getGoType(value);
+                    const tags = generateGoTags(formatFieldName(key));
+
+                    result += `\t${fieldName} ${fieldType}${tags}\n`;
+
+                    // 递归处理嵌套对象
+                    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                        result += '\n' + generateGoStruct(value, key);
+                    }
+                }
+
+                result += '}\n';
+                return result;
+            };
+
+            // 生成Java类
+            const generateJavaClass = (obj, name = 'Root') => {
+                const className = name === 'Root' ? toPascalCase(options.value.rootName) : toPascalCase(name);
+                let result = `public class ${className} {\n`;
+
+                for (const [key, value] of Object.entries(obj)) {
+                    const fieldName = toCamelCase(key);
+                    let fieldType = 'Object';
+
+                    if (Array.isArray(value)) {
+                        fieldType = value.length > 0 ? `List<${getJavaType(value[0])}>` : 'List<Object>';
+                    } else if (typeof value === 'object' && value !== null) {
+                        fieldType = toPascalCase(key);
+                    } else {
+                        fieldType = getJavaType(value);
+                    }
+
+                    result += `\tprivate ${fieldType} ${fieldName};\n`;
+
+                    // 生成getter/setter
+                    result += `\n\tpublic ${fieldType} get${toPascalCase(key)}() {\n\t\treturn this.${fieldName};\n\t}\n\n`;
+                    result += `\tpublic void set${toPascalCase(key)}(${fieldType} ${fieldName}) {\n\t\tthis.${fieldName} = ${fieldName};\n\t}\n`;
+                }
+
+                result += '}\n';
+                return result;
+            };
+
+            const getJavaType = (value) => {
+                if (value === null) return 'Object';
+                switch (typeof value) {
+                    case 'string': return 'String';
+                    case 'number': return Number.isInteger(value) ? 'Integer' : 'Double';
+                    case 'boolean': return 'Boolean';
+                    default: return 'Object';
+                }
+            };
+
+            // 生成TypeScript接口
+            const generateTypeScriptInterface = (obj, name = 'Root') => {
+                const interfaceName = name === 'Root' ? toPascalCase(options.value.rootName) : toPascalCase(name);
+                let result = `interface ${interfaceName} {\n`;
+
+                for (const [key, value] of Object.entries(obj)) {
+                    const fieldName = toCamelCase(key);
+                    let fieldType = 'any';
+
+                    if (Array.isArray(value)) {
+                        fieldType = value.length > 0 ? `${getTypeScriptType(value[0])}[]` : 'any[]';
+                    } else if (typeof value === 'object' && value !== null) {
+                        fieldType = toPascalCase(key);
+                    } else {
+                        fieldType = getTypeScriptType(value);
+                    }
+
+                    result += `\t${fieldName}: ${fieldType};\n`;
+                }
+
+                result += '}\n';
+                return result;
+            };
+
+            const getTypeScriptType = (value) => {
+                if (value === null) return 'null';
+                switch (typeof value) {
+                    case 'string': return 'string';
+                    case 'number': return 'number';
+                    case 'boolean': return 'boolean';
+                    default: return 'any';
+                }
+            };
+
+            // 生成Python类
+            const generatePythonClass = (obj, name = 'Root') => {
+                const className = name === 'Root' ? toPascalCase(options.value.rootName) : toPascalCase(name);
+                let result = `from dataclasses import dataclass\nfrom typing import Optional, List, Dict, Any\n\n`;
+                result += `@dataclass\nclass ${className}:\n`;
+
+                for (const [key, value] of Object.entries(obj)) {
+                    const fieldName = formatFieldName(key);
+                    let fieldType = 'Any';
+                    let defaultValue = '';
+
+                    if (Array.isArray(value)) {
+                        fieldType = value.length > 0 ? `List[${getPythonType(value[0])}]` : 'List[Any]';
+                        defaultValue = ' = None';
+                    } else if (typeof value === 'object' && value !== null) {
+                        fieldType = toPascalCase(key);
+                        defaultValue = ' = None';
+                    } else {
+                        fieldType = getPythonType(value);
+                        if (value === null) {
+                            fieldType = `Optional[${fieldType}]`;
+                            defaultValue = ' = None';
+                        } else {
+                            // 为基本类型添加默认值
+                            defaultValue = ` = ${JSON.stringify(value)}`;
+                        }
+                    }
+
+                    result += `    ${fieldName}: ${fieldType}${defaultValue}\n`;
+                }
+
+                return result;
+            };
+
+            const getPythonType = (value) => {
+                if (value === null) return 'Any';
+                switch (typeof value) {
+                    case 'string': return 'str';
+                    case 'number': return Number.isInteger(value) ? 'int' : 'float';
+                    case 'boolean': return 'bool';
+                    default: return 'Any';
+                }
+            };
+
+            // 主转换函数
+            const convertJson = () => {
+                try {
+                    if (!inputJson.value.trim()) {
+                        outputCode.value = '';
+                        jsonError.value = '';
+                        return;
+                    }
+
+                    const jsonObj = JSON.parse(inputJson.value);
+                    jsonError.value = '';
+                    lastUpdate.value = new Date().toLocaleTimeString();
+
+                    switch (selectedLanguage.value) {
+                        case 'go':
+                            outputCode.value = generateGoStruct(jsonObj, options.value.rootName);
+                            break;
+                        case 'java':
+                            outputCode.value = generateJavaClass(jsonObj, options.value.rootName);
+                            break;
+                        case 'typescript':
+                            outputCode.value = generateTypeScriptInterface(jsonObj, options.value.rootName);
+                            break;
+                        case 'python':
+                            outputCode.value = generatePythonClass(jsonObj, options.value.rootName);
+                            break;
+                        default:
+                            outputCode.value = '暂不支持该语言';
+                    }
+
+                    // 高亮代码 - 使用 nextTick 确保 DOM 更新
+                    nextTick(() => {
+                        if (window.hljs) {
+                            document.querySelectorAll('pre code').forEach(block => {
+                                window.hljs.highlightElement(block);
+                            });
+                        }
+                    });
+
+                } catch (error) {
+                    jsonError.value = 'JSON 解析错误: ' + error.message;
+                    outputCode.value = '';
+                }
+            };
+
+            // 其他功能函数
+            const formatJson = () => {
+                try {
+                    const jsonObj = JSON.parse(inputJson.value);
+                    inputJson.value = JSON.stringify(jsonObj, null, 2);
+                    convertJson();
+                    showToastMessage('JSON 格式化成功');
+                } catch (error) {
+                    showToastMessage('JSON 格式错误');
+                }
+            };
+
+            const loadExample = () => {
+                inputJson.value = `{
+"user": {
+"id": 12345,
+"username": "john_doe",
+"email": "john@example.com",
+"profile": {
+  "firstName": "John",
+  "lastName": "Doe",
+  "age": 30,
+  "isActive": true,
+  "address": {
+    "street": "123 Main St",
+    "city": "New York",
+    "country": "USA",
+    "zipCode": "10001"
+  }
+},
+"roles": ["admin", "user"],
+"preferences": {
+  "theme": "dark",
+  "notifications": true,
+  "language": "en"
+},
+"createdAt": "2023-10-01T10:00:00Z",
+"updatedAt": "2023-10-01T12:00:00Z"
+},
+"metadata": {
+"version": "1.0",
+"count": 1,
+"timestamp": "2023-10-01T12:00:00Z"
+}
+}`;
+                convertJson();
+                showToastMessage('示例数据已加载');
+            };
+
+            const copyCode = async () => {
+                try {
+                    await navigator.clipboard.writeText(outputCode.value);
+                    showToastMessage('代码已复制到剪贴板');
+                } catch (error) {
+                    // 降级方案
+                    const textArea = document.createElement('textarea');
+                    textArea.value = outputCode.value;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showToastMessage('代码已复制到剪贴板');
+                }
+            };
+
+            const downloadCode = () => {
+                if (!outputCode.value.trim()) {
+                    showToastMessage('没有代码可下载');
+                    return;
+                }
+
+                const blob = new Blob([outputCode.value], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const extension = selectedLanguage.value === 'go' ? 'go' :
+                                selectedLanguage.value === 'java' ? 'java' :
+                                selectedLanguage.value === 'typescript' ? 'ts' :
+                                selectedLanguage.value === 'python' ? 'py' : 'txt';
+                a.href = url;
+                a.download = `${options.value.rootName || 'struct'}.${extension}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToastMessage('文件下载开始');
+            };
+
+            const resetAll = () => {
+                inputJson.value = '';
+                outputCode.value = '';
+                selectedLanguage.value = 'go';
+                goTags.value = ['json', 'gorm'];
+                options.value = {
+                    snakeCase: false,
+                    publicFields: true,
+                    rootName: 'AutoGenerated'
+                };
+                showToastMessage('已重置所有设置');
+            };
+
+            const shareCode = () => {
+                const data = {
+                    json: inputJson.value,
+                    language: selectedLanguage.value,
+                    goTags: goTags.value,
+                    options: options.value
+                };
+                try {
+                    const encoded = btoa(JSON.stringify(data));
+                    const url = `${window.location.origin}${window.location.pathname}#${encoded}`;
+
+                    navigator.clipboard.writeText(url).then(() => {
+                        showToastMessage('分享链接已复制到剪贴板');
+                    });
+                } catch (error) {
+                    showToastMessage('生成分享链接失败');
+                }
+            };
+
+            const runInPlayground = () => {
+                const playgroundUrls = {
+                    go: 'https://play.golang.org',
+                    java: 'https://replit.com/languages/java',
+                    typescript: 'https://www.typescriptlang.org/play',
+                    python: 'https://www.python.org/shell/'
+                };
+
+                const url = playgroundUrls[selectedLanguage.value];
+                if (url) {
+                    window.open(url, '_blank');
+                } else {
+                    showToastMessage('该语言暂无在线运行环境');
+                }
+            };
+
+            const showToastMessage = (message) => {
+                toastMessage.value = message;
+                showToast.value = true;
+                setTimeout(() => {
+                    showToast.value = false;
+                }, 3000);
+            };
+
+            const toggleInstructions = () => {
+                showInstructions.value = !showInstructions.value;
+            };
+
+            const selectLanguage = (lang) => {
+                selectedLanguage.value = lang;
+                convertJson();
+            };
+
+            // 监听变化
+            watch(selectedLanguage, convertJson);
+            watch(goTags, convertJson);
+            watch(() => options.value, convertJson, { deep: true });
+
+            // 初始化
+            onMounted(() => {
+                loadExample();
+
+                // 监听URL hash以支持分享功能
+                if (window.location.hash) {
+                    try {
+                        const data = JSON.parse(atob(window.location.hash.slice(1)));
+                        inputJson.value = data.json;
+                        selectedLanguage.value = data.language;
+                        goTags.value = data.goTags;
+                        options.value = data.options;
+                        convertJson();
+                    } catch (error) {
+                        console.log('无法解析分享数据，使用默认示例');
+                    }
+                }
+            });
+
+            return {
+                inputJson,
+                outputCode,
+                selectedLanguage,
+                goTags,
+                jsonError,
+                showToast,
+                toastMessage,
+                lastUpdate,
+                showInstructions,
+                options,
+                languages,
+                languageNames,
+                convertJson,
+                formatJson,
+                loadExample,
+                copyCode,
+                downloadCode,
+                resetAll,
+                shareCode,
+                runInPlayground,
+                showToastMessage,
+                toggleInstructions,
+                selectLanguage
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>
