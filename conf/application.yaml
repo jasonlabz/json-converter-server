@@ -9,6 +9,9 @@ application:
     grpc:
       port: 8082
       max_concurrent_streams: 100
+    static:
+      port: 8083
+      path: static
   monitor:
     prometheus:
       enable: false      # Enable prometheus client
