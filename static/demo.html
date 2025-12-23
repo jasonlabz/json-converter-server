@@ -1,1005 +1,1097 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JSON to Struct Converter</title>
-    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
+    <meta charset="UTF-8" />
+    <title>JSON → 多语言结构体生成器</title>
+
+    <!-- 图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        :root {
-            --primary-color: #409eff;
-            --bg-color: #f5f7fa;
-            --card-bg: #ffffff;
-            --border-color: #e4e7ed;
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
             margin: 0;
-            padding: 20px;
-            background-color: var(--bg-color);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #e5e7eb;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
+        .app-container {
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            height: 100vh;
+            padding: 16px;
+            gap: 16px;
         }
 
         .header {
             text-align: center;
-            padding: 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 8px;
         }
 
         .header h1 {
-            margin: 0;
-            font-size: 2.5rem;
+            font-size: 24px;
             font-weight: 600;
-        }
-
-        .header p {
-            margin: 12px 0 0;
-            opacity: 0.9;
-            font-size: 1.1rem;
-        }
-
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-        }
-
-        @media (max-width: 1024px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 24px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-        }
-
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #303133;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .card-title i {
-            color: var(--primary-color);
-        }
-
-        .code-area {
-            position: relative;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-
-        .code-header {
-            background: #f8f9fa;
-            padding: 12px 20px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .code-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        pre {
-            margin: 0;
-            padding: 20px;
-            max-height: 600px;
-            overflow: auto;
-            background: #fafafa;
-        }
-
-        code {
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .control-panel {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
-            padding: 20px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-
-        .tag-options {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
-            margin-top: 16px;
-            padding: 20px;
-            background: #f8fafc;
-            border-radius: 8px;
-        }
-
-        .language-selector {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .language-btn {
-            padding: 8px 16px;
-            border: 2px solid var(--border-color);
-            background: white;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-
-        .language-btn.active {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 12px;
-            margin-top: 20px;
-        }
-
-        .btn {
-            padding: 10px 24px;
-            border: none;
-            border-radius: 6px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
             display: inline-flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #337ecc;
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: #f0f2f5;
-            color: #606266;
-        }
-
-        .btn-secondary:hover {
-            background: #e4e6e9;
-        }
-
-        .btn-success {
-            background: #67c23a;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #5daf34;
-        }
-
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            padding: 12px 24px;
-            background: #67c23a;
-            color: white;
-            border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            animation: slideIn 0.3s ease;
-            z-index: 1000;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .stats {
-            display: flex;
-            gap: 24px;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border-color);
-            color: #606266;
+        .header .subtitle {
             font-size: 14px;
+            color: #94a3b8;
+            margin-top: 4px;
         }
 
-        .stat-item {
+        .config-panel {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 12px;
+            padding: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .config-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .config-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .config-group label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #cbd5e1;
+            white-space: nowrap;
+        }
+
+        .language-select {
+            position: relative;
+        }
+
+        .language-select select {
+            background: #1e293b;
+            color: #f1f5f9;
+            border: 1px solid #475569;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            min-width: 180px;
+            cursor: pointer;
+            transition: all 0.2s;
+            appearance: none;
+            padding-right: 40px;
+        }
+
+        .language-select select:hover {
+            border-color: #60a5fa;
+            background: #1e293b;
+        }
+
+        .language-select select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        .language-select::after {
+            content: "▼";
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        .go-tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .tag-checkbox {
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
-        .badge {
-            padding: 4px 8px;
-            background: #e8f4ff;
-            color: var(--primary-color);
+        .tag-checkbox input[type="checkbox"] {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid #475569;
             border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
         }
 
-        .toggle-section {
+        .tag-checkbox input[type="checkbox"]:checked {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        .tag-checkbox input[type="checkbox"]:checked::after {
+            content: "✓";
+            position: absolute;
+            color: white;
+            font-size: 12px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .tag-checkbox label {
+            font-size: 13px;
+            color: #cbd5e1;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 8px;
-            margin: 16px 0;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            cursor: pointer;
         }
 
-        .toggle-icon {
-            transition: transform 0.3s ease;
+        .btn-primary {
+            background: linear-gradient(90deg, #3b82f6, #6366f1);
+            color: white;
         }
 
-        .toggle-icon.open {
-            transform: rotate(180deg);
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #2563eb, #4f46e5);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e5e7eb;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .editor-panels {
+            display: flex;
+            flex: 1;
+            gap: 16px;
+            min-height: 0;
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            background: rgba(30, 41, 59, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .panel-title i {
+            color: #60a5fa;
+        }
+
+        .panel-stats {
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .panel-content {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+        }
+
+        .json-panel {
+            flex: 1;
+        }
+
+        .code-panel {
+            flex: 1;
+        }
+
+        .editor-placeholder {
+            height: 100%;
+            background: #0f172a;
+            border-radius: 0 0 12px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 18px;
+            background: rgba(30, 41, 59, 0.9);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .language-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+        }
+
+        .info-icon {
+            color: #60a5fa;
+            font-size: 14px;
+        }
+
+        @media (max-width: 1200px) {
+            .config-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .action-buttons {
+                margin-left: 0;
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .editor-panels {
+                flex-direction: column;
+            }
+
+            .panel {
+                min-height: 300px;
+            }
+        }
+
+        .error-message {
+            color: #f87171;
+            font-size: 13px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
     </style>
 </head>
 <body>
-<div id="app">
-    <div class="container">
-        <!-- 头部 -->
-        <div class="header">
-            <h1>🔮 JSON to Struct Converter</h1>
-            <p>智能生成 Go、Java、TypeScript 等语言的结构体定义</p>
-        </div>
 
-        <!-- 控制面板 -->
-        <div class="control-panel">
-            <div style="flex: 1; min-width: 200px;">
-                <div class="card-title">🎯 目标语言</div>
-                <div class="language-selector">
-                    <button
-                            v-for="lang in languages"
-                            :key="lang.value"
-                            @click="selectLanguage(lang.value)"
-                            :class="['language-btn', { active: selectedLanguage === lang.value }]"
-                    >
-                        {{ lang.label }}
-                    </button>
-                </div>
-            </div>
+<div id="root"></div>
 
-            <div style="flex: 1; min-width: 200px;">
-                <div class="card-title">⚙️ 转换选项</div>
-                <div style="display: flex; gap: 12px; align-items: center;">
-                    <el-checkbox v-model="options.snakeCase" label="蛇形命名" />
-                    <el-checkbox v-model="options.publicFields" label="公开字段" />
-                    <el-input
-                            v-model="options.rootName"
-                            placeholder="根结构体名称"
-                            style="width: 200px;"
-                    />
-                </div>
-            </div>
-        </div>
+<!-- React & ReactDOM -->
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
-        <!-- Go标签选项（仅Go语言显示） -->
-        <div v-if="selectedLanguage === 'go'" class="card">
-            <div class="card-title">🏷️ Go 标签选项</div>
-            <div class="tag-options">
-                <el-checkbox-group v-model="goTags" size="large">
-                    <el-checkbox label="json" value="json">
-                        <span class="badge">json:"field"</span>
-                    </el-checkbox>
-                    <el-checkbox label="gorm" value="gorm">
-                        <span class="badge">gorm:"column:field"</span>
-                    </el-checkbox>
-                    <el-checkbox label="mapstructure" value="mapstructure">
-                        <span class="badge">mapstructure:"field"</span>
-                    </el-checkbox>
-                    <el-checkbox label="validate" value="validate">
-                        <span class="badge">validate:"required"</span>
-                    </el-checkbox>
-                    <el-checkbox label="yaml" value="yaml">
-                        <span class="badge">yaml:"field"</span>
-                    </el-checkbox>
-                    <el-checkbox label="xml" value="xml">
-                        <span class="badge">xml:"field"</span>
-                    </el-checkbox>
-                </el-checkbox-group>
-            </div>
-        </div>
+<!-- Monaco Editor -->
+<script src="https://unpkg.com/monaco-editor@0.45.0/min/vs/loader.js"></script>
 
-        <!-- 主内容区 -->
-        <div class="main-content">
-            <!-- 输入区 -->
-            <div class="card">
-                <div class="card-title">
-                    <i class="el-icon-edit"></i>
-                    输入 JSON
-                </div>
-                <div class="code-area">
-                    <div class="code-header">
-                        <span>JSON 数据</span>
-                        <div class="code-actions">
-                            <button class="btn btn-secondary" @click="formatJson">
-                                <i class="el-icon-refresh"></i>格式化
-                            </button>
-                            <button class="btn btn-secondary" @click="loadExample">
-                                <i class="el-icon-document"></i>示例
-                            </button>
-                        </div>
-                    </div>
-                    <div style="position: relative;">
-                            <textarea
-                                    v-model="inputJson"
-                                    @input="convertJson"
-                                    placeholder='输入 JSON 数据，例如：
-{
-  "name": "John",
-  "age": 30,
-  "email": "john@example.com",
-  "address": {
-    "street": "123 Main St",
-    "city": "New York"
-  }
-}'
-                                    style="
-                                    width: 100%;
-                                    height: 400px;
-                                    padding: 20px;
-                                    border: none;
-                                    font-family: 'JetBrains Mono', monospace;
-                                    font-size: 14px;
-                                    line-height: 1.5;
-                                    resize: vertical;
-                                    outline: none;
-                                    background: #fafafa;
-                                "
-                            ></textarea>
-                        <div v-if="jsonError" style="
-                                position: absolute;
-                                bottom: 10px;
-                                right: 10px;
-                                background: #f56c6c;
-                                color: white;
-                                padding: 4px 8px;
-                                border-radius: 4px;
-                                font-size: 12px;
-                            ">
-                            {{ jsonError }}
-                        </div>
-                    </div>
-                </div>
-                <div class="stats">
-                    <div class="stat-item">
-                        <i class="el-icon-document"></i>
-                        长度: {{ inputJson.length }} 字符
-                    </div>
-                    <div class="stat-item">
-                        <i class="el-icon-tickets"></i>
-                        行数: {{ inputJson.split('\n').length }}
-                    </div>
-                    <div class="stat-item">
-                        <i class="el-icon-time"></i>
-                        更新时间: {{ lastUpdate }}
-                    </div>
-                </div>
-            </div>
-
-            <!-- 输出区 -->
-            <div class="card">
-                <div class="card-title">
-                    <i class="el-icon-document"></i>
-                    生成代码
-                    <span style="margin-left: auto; font-size: 14px; color: #909399;">
-                            {{ languageNames[selectedLanguage] }}
-                        </span>
-                </div>
-                <div class="code-area">
-                    <div class="code-header">
-                        <span>{{ languageNames[selectedLanguage] }} 结构体</span>
-                        <div class="code-actions">
-                            <button class="btn btn-success" @click="copyCode">
-                                <i class="el-icon-document-copy"></i>复制
-                            </button>
-                            <button class="btn btn-primary" @click="downloadCode">
-                                <i class="el-icon-download"></i>下载
-                            </button>
-                        </div>
-                    </div>
-                    <pre><code class="hljs" :class="selectedLanguage" ref="codeOutput">{{ outputCode }}</code></pre>
-                </div>
-                <div class="action-buttons">
-                    <button class="btn btn-secondary" @click="resetAll">
-                        <i class="el-icon-delete"></i>重置所有
-                    </button>
-                    <button class="btn btn-primary" @click="shareCode">
-                        <i class="el-icon-share"></i>分享
-                    </button>
-                    <button class="btn btn-success" @click="runInPlayground">
-                        <i class="el-icon-video-play"></i>在线运行
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- 使用说明 -->
-        <div class="card">
-            <div class="toggle-section" @click="toggleInstructions">
-                <div class="card-title">
-                    <i class="el-icon-info"></i>
-                    使用说明
-                </div>
-                <i class="el-icon-arrow-down toggle-icon" :class="{ open: showInstructions }"></i>
-            </div>
-            <div v-if="showInstructions" style="padding: 0 20px 20px;">
-                <ol style="color: #606266; line-height: 1.8;">
-                    <li>在左侧输入 JSON 数据，或点击"示例"加载示例数据</li>
-                    <li>选择目标编程语言（Go、Java、TypeScript 等）</li>
-                    <li>对于 Go 语言，可选择需要添加的标签类型</li>
-                    <li>配置其他选项（命名风格、字段可见性等）</li>
-                    <li>生成的代码会自动显示在右侧，支持复制和下载</li>
-                    <li>可通过"分享"功能生成可分享的链接</li>
-                </ol>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast 提示 -->
-    <div v-if="showToast" class="toast">
-        {{ toastMessage }}
-    </div>
-</div>
-
-<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<script src="https://unpkg.com/element-plus/dist/index.full.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/go.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/java.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/typescript.min.js"></script>
 <script>
-    const { createApp, ref, computed, watch, onMounted, nextTick } = Vue;
-    const { ElCheckbox, ElCheckboxGroup, ElInput } = ElementPlus;
+    // 配置Monaco Editor路径
+    require.config({
+        paths: {
+            vs: "https://unpkg.com/monaco-editor@0.45.0/min/vs"
+        }
+    });
 
-    createApp({
-        components: {
-            ElCheckbox,
-            ElCheckboxGroup,
-            ElInput
-        },
-        setup() {
-            // 状态管理
-            const inputJson = ref('');
-            const outputCode = ref('');
-            const selectedLanguage = ref('go');
-            const goTags = ref(['json', 'gorm']);
-            const jsonError = ref('');
-            const showToast = ref(false);
-            const toastMessage = ref('');
-            const lastUpdate = ref('');
-            const showInstructions = ref(true);
+    // 等待Monaco加载完成后执行
+    require(["vs/editor/editor.main"], function () {
+        const { useState, useEffect, useRef, useCallback } = React;
 
-            // 配置选项
-            const options = ref({
-                snakeCase: false,
-                publicFields: true,
-                rootName: 'AutoGenerated'
+        // 语言配置
+        const LANGUAGE_CONFIG = {
+            go: {
+                name: "Golang",
+                icon: "🔵",
+                fileExt: "go",
+                monacoLang: "go"
+            },
+            java: {
+                name: "Java",
+                icon: "☕",
+                fileExt: "java",
+                monacoLang: "java"
+            },
+            typescript: {
+                name: "TypeScript",
+                icon: "📘",
+                fileExt: "ts",
+                monacoLang: "typescript"
+            },
+            python: {
+                name: "Python",
+                icon: "🐍",
+                fileExt: "py",
+                monacoLang: "python"
+            },
+            kotlin: {
+                name: "Kotlin",
+                icon: "⚡",
+                fileExt: "kt",
+                monacoLang: "kotlin"
+            },
+            rust: {
+                name: "Rust",
+                icon: "🦀",
+                fileExt: "rs",
+                monacoLang: "rust"
+            }
+        };
+
+        // 默认JSON
+        const DEFAULT_JSON = `{
+  "user_id": 12345,
+  "username": "john_doe",
+  "full_name": "John Doe",
+  "email": "john@example.com",
+  "age": 30,
+  "is_active": true,
+  "score": 95.8,
+  "roles": ["admin", "user"],
+  "metadata": {
+    "created_at": "2023-10-01T12:00:00Z",
+    "last_login": "2023-12-15T08:30:00Z"
+  },
+  "preferences": {
+    "theme": "dark",
+    "notifications": true,
+    "language": "en"
+  },
+  "tags": ["developer", "backend", "golang"],
+  "projects": [
+    {
+      "id": 1,
+      "name": "API Gateway",
+      "status": "completed"
+    },
+    {
+      "id": 2,
+      "name": "User Service",
+      "status": "in_progress"
+    }
+  ]
+}`;
+
+        function App() {
+            const [lang, setLang] = useState("go");
+            const [goTags, setGoTags] = useState({
+                json: true,
+                mapstructure: false,
+                gorm: false,
+                yaml: false,
+                xml: false,
+                validate: false,
+                omitempty: true
             });
 
-            // 语言配置
-            const languages = [
-                { value: 'go', label: 'Go', icon: '⚡' },
-                { value: 'java', label: 'Java', icon: '☕' },
-                { value: 'typescript', label: 'TypeScript', icon: '📘' },
-                { value: 'python', label: 'Python', icon: '🐍' },
-                { value: 'rust', label: 'Rust', icon: '🦀' },
-                { value: 'kotlin', label: 'Kotlin', icon: '📱' }
-            ];
+            const [structName, setStructName] = useState("Response");
+            const [jsonText, setJsonText] = useState(DEFAULT_JSON);
+            const [generatedCode, setGeneratedCode] = useState("");
+            const [error, setError] = useState("");
+            const [isGenerating, setIsGenerating] = useState(false);
+            const [jsonStats, setJsonStats] = useState({ lines: 0, chars: 0 });
+            const [codeStats, setCodeStats] = useState({ lines: 0, chars: 0 });
 
-            const languageNames = {
-                go: 'Go',
-                java: 'Java',
-                typescript: 'TypeScript',
-                python: 'Python',
-                rust: 'Rust',
-                kotlin: 'Kotlin'
-            };
+            const jsonEditorRef = useRef(null);
+            const jsonEditorInstance = useRef(null);
+            const codeEditorRef = useRef(null);
+            const codeEditorInstance = useRef(null);
 
-            // 工具函数
-            const toSnakeCase = (str) => {
-                return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-            };
-
-            const toCamelCase = (str) => {
-                return str.replace(/([-_][a-z])/g, group =>
-                    group.toUpperCase().replace('-', '').replace('_', '')
-                );
-            };
-
-            const toPascalCase = (str) => {
-                const camel = toCamelCase(str);
-                return camel.charAt(0).toUpperCase() + camel.slice(1);
-            };
-
-            const formatFieldName = (name) => {
-                if (options.value.snakeCase) {
-                    return toSnakeCase(name);
-                }
-                return name;
-            };
-
-            // 获取Go类型
-            const getGoType = (value) => {
-                if (value === null) return 'interface{}';
-                if (Array.isArray(value)) {
-                    if (value.length > 0) {
-                        return `[]${getGoType(value[0])}`;
-                    }
-                    return '[]interface{}';
-                }
-                if (typeof value === 'object' && value !== null) {
-                    return toPascalCase(options.value.rootName) + toPascalCase(value.constructor.name);
-                }
-                switch (typeof value) {
-                    case 'string': return 'string';
-                    case 'number': return Number.isInteger(value) ? 'int' : 'float64';
-                    case 'boolean': return 'bool';
-                    default: return 'interface{}';
-                }
-            };
-
-            // 生成Go标签
-            const generateGoTags = (fieldName) => {
-                if (goTags.value.length === 0) return '';
-
-                const tags = goTags.value.map(tag => {
-                    switch (tag) {
-                        case 'json':
-                            return `json:"${fieldName}"`;
-                        case 'gorm':
-                            return `gorm:"column:${fieldName}"`;
-                        case 'mapstructure':
-                            return `mapstructure:"${fieldName}"`;
-                        case 'validate':
-                            return `validate:"required"`;
-                        case 'yaml':
-                            return `yaml:"${fieldName}"`;
-                        case 'xml':
-                            return `xml:"${fieldName}"`;
-                        default:
-                            return '';
-                    }
-                }).filter(tag => tag);
-
-                return tags.length > 0 ? ' `' + tags.join(' ') + '`' : '';
-            };
-
-            // 生成Go结构体
-            const generateGoStruct = (obj, name = 'Root') => {
-                const structName = name === 'Root' ? toPascalCase(options.value.rootName) : toPascalCase(name);
-                let result = `type ${structName} struct {\n`;
-
-                for (const [key, value] of Object.entries(obj)) {
-                    const fieldName = options.value.publicFields ? toPascalCase(key) : toCamelCase(key);
-                    const fieldType = getGoType(value);
-                    const tags = generateGoTags(formatFieldName(key));
-
-                    result += `\t${fieldName} ${fieldType}${tags}\n`;
-
-                    // 递归处理嵌套对象
-                    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                        result += '\n' + generateGoStruct(value, key);
-                    }
-                }
-
-                result += '}\n';
-                return result;
-            };
-
-            // 生成Java类
-            const generateJavaClass = (obj, name = 'Root') => {
-                const className = name === 'Root' ? toPascalCase(options.value.rootName) : toPascalCase(name);
-                let result = `public class ${className} {\n`;
-
-                for (const [key, value] of Object.entries(obj)) {
-                    const fieldName = toCamelCase(key);
-                    let fieldType = 'Object';
-
-                    if (Array.isArray(value)) {
-                        fieldType = value.length > 0 ? `List<${getJavaType(value[0])}>` : 'List<Object>';
-                    } else if (typeof value === 'object' && value !== null) {
-                        fieldType = toPascalCase(key);
-                    } else {
-                        fieldType = getJavaType(value);
-                    }
-
-                    result += `\tprivate ${fieldType} ${fieldName};\n`;
-
-                    // 生成getter/setter
-                    result += `\n\tpublic ${fieldType} get${toPascalCase(key)}() {\n\t\treturn this.${fieldName};\n\t}\n\n`;
-                    result += `\tpublic void set${toPascalCase(key)}(${fieldType} ${fieldName}) {\n\t\tthis.${fieldName} = ${fieldName};\n\t}\n`;
-                }
-
-                result += '}\n';
-                return result;
-            };
-
-            const getJavaType = (value) => {
-                if (value === null) return 'Object';
-                switch (typeof value) {
-                    case 'string': return 'String';
-                    case 'number': return Number.isInteger(value) ? 'Integer' : 'Double';
-                    case 'boolean': return 'Boolean';
-                    default: return 'Object';
-                }
-            };
-
-            // 生成TypeScript接口
-            const generateTypeScriptInterface = (obj, name = 'Root') => {
-                const interfaceName = name === 'Root' ? toPascalCase(options.value.rootName) : toPascalCase(name);
-                let result = `interface ${interfaceName} {\n`;
-
-                for (const [key, value] of Object.entries(obj)) {
-                    const fieldName = toCamelCase(key);
-                    let fieldType = 'any';
-
-                    if (Array.isArray(value)) {
-                        fieldType = value.length > 0 ? `${getTypeScriptType(value[0])}[]` : 'any[]';
-                    } else if (typeof value === 'object' && value !== null) {
-                        fieldType = toPascalCase(key);
-                    } else {
-                        fieldType = getTypeScriptType(value);
-                    }
-
-                    result += `\t${fieldName}: ${fieldType};\n`;
-                }
-
-                result += '}\n';
-                return result;
-            };
-
-            const getTypeScriptType = (value) => {
-                if (value === null) return 'null';
-                switch (typeof value) {
-                    case 'string': return 'string';
-                    case 'number': return 'number';
-                    case 'boolean': return 'boolean';
-                    default: return 'any';
-                }
-            };
-
-            // 生成Python类
-            const generatePythonClass = (obj, name = 'Root') => {
-                const className = name === 'Root' ? toPascalCase(options.value.rootName) : toPascalCase(name);
-                let result = `from dataclasses import dataclass\nfrom typing import Optional, List, Dict, Any\n\n`;
-                result += `@dataclass\nclass ${className}:\n`;
-
-                for (const [key, value] of Object.entries(obj)) {
-                    const fieldName = formatFieldName(key);
-                    let fieldType = 'Any';
-                    let defaultValue = '';
-
-                    if (Array.isArray(value)) {
-                        fieldType = value.length > 0 ? `List[${getPythonType(value[0])}]` : 'List[Any]';
-                        defaultValue = ' = None';
-                    } else if (typeof value === 'object' && value !== null) {
-                        fieldType = toPascalCase(key);
-                        defaultValue = ' = None';
-                    } else {
-                        fieldType = getPythonType(value);
-                        if (value === null) {
-                            fieldType = `Optional[${fieldType}]`;
-                            defaultValue = ' = None';
-                        } else {
-                            // 为基本类型添加默认值
-                            defaultValue = ` = ${JSON.stringify(value)}`;
-                        }
-                    }
-
-                    result += `    ${fieldName}: ${fieldType}${defaultValue}\n`;
-                }
-
-                return result;
-            };
-
-            const getPythonType = (value) => {
-                if (value === null) return 'Any';
-                switch (typeof value) {
-                    case 'string': return 'str';
-                    case 'number': return Number.isInteger(value) ? 'int' : 'float';
-                    case 'boolean': return 'bool';
-                    default: return 'Any';
-                }
-            };
-
-            // 主转换函数
-            const convertJson = () => {
-                try {
-                    if (!inputJson.value.trim()) {
-                        outputCode.value = '';
-                        jsonError.value = '';
-                        return;
-                    }
-
-                    const jsonObj = JSON.parse(inputJson.value);
-                    jsonError.value = '';
-                    lastUpdate.value = new Date().toLocaleTimeString();
-
-                    switch (selectedLanguage.value) {
-                        case 'go':
-                            outputCode.value = generateGoStruct(jsonObj, options.value.rootName);
-                            break;
-                        case 'java':
-                            outputCode.value = generateJavaClass(jsonObj, options.value.rootName);
-                            break;
-                        case 'typescript':
-                            outputCode.value = generateTypeScriptInterface(jsonObj, options.value.rootName);
-                            break;
-                        case 'python':
-                            outputCode.value = generatePythonClass(jsonObj, options.value.rootName);
-                            break;
-                        default:
-                            outputCode.value = '暂不支持该语言';
-                    }
-
-                    // 高亮代码 - 使用 nextTick 确保 DOM 更新
-                    nextTick(() => {
-                        if (window.hljs) {
-                            document.querySelectorAll('pre code').forEach(block => {
-                                window.hljs.highlightElement(block);
-                            });
-                        }
+            // 初始化编辑器
+            useEffect(() => {
+                if (!jsonEditorInstance.current && jsonEditorRef.current) {
+                    jsonEditorInstance.current = monaco.editor.create(jsonEditorRef.current, {
+                        value: DEFAULT_JSON,
+                        language: "json",
+                        theme: "vs-dark",
+                        automaticLayout: true,
+                        folding: true,
+                        minimap: { enabled: true },
+                        scrollBeyondLastLine: false,
+                        fontSize: 14,
+                        lineNumbers: "on",
+                        glyphMargin: true,
+                        formatOnPaste: true,
+                        formatOnType: true,
+                        wordWrap: "on"
                     });
 
-                } catch (error) {
-                    jsonError.value = 'JSON 解析错误: ' + error.message;
-                    outputCode.value = '';
-                }
-            };
+                    // 监听内容变化
+                    jsonEditorInstance.current.onDidChangeModelContent(() => {
+                        const value = jsonEditorInstance.current.getValue();
+                        setJsonText(value);
 
-            // 其他功能函数
+                        // 计算统计信息
+                        const lines = value.split('\n').length;
+                        const chars = value.length;
+                        setJsonStats({ lines, chars });
+                    });
+                }
+
+                if (!codeEditorInstance.current && codeEditorRef.current) {
+                    codeEditorInstance.current = monaco.editor.create(codeEditorRef.current, {
+                        value: "",
+                        language: "go",
+                        theme: "vs-dark",
+                        readOnly: true,
+                        automaticLayout: true,
+                        folding: true,
+                        minimap: { enabled: true },
+                        scrollBeyondLastLine: false,
+                        fontSize: 14,
+                        lineNumbers: "on"
+                    });
+                }
+
+                // 初始生成
+                generateCode();
+
+                return () => {
+                    if (jsonEditorInstance.current) {
+                        jsonEditorInstance.current.dispose();
+                        jsonEditorInstance.current = null;
+                    }
+                    if (codeEditorInstance.current) {
+                        codeEditorInstance.current.dispose();
+                        codeEditorInstance.current = null;
+                    }
+                };
+            }, []);
+
+            // 更新代码编辑器语言
+            useEffect(() => {
+                if (codeEditorInstance.current) {
+                    const model = codeEditorInstance.current.getModel();
+                    if (model) {
+                        monaco.editor.setModelLanguage(model, LANGUAGE_CONFIG[lang].monacoLang);
+                    }
+                }
+            }, [lang]);
+
+            // 生成代码
+            const generateCode = useCallback(() => {
+                setIsGenerating(true);
+                setError("");
+
+                try {
+                    const jsonValue = jsonEditorInstance.current?.getValue() || jsonText;
+                    const obj = JSON.parse(jsonValue);
+
+                    const code = generateCodeFromObject(obj, lang, structName, goTags);
+                    setGeneratedCode(code);
+
+                    // 更新代码编辑器
+                    if (codeEditorInstance.current) {
+                        codeEditorInstance.current.setValue(code);
+                    }
+
+                    // 计算统计信息
+                    const lines = code.split('\n').length;
+                    const chars = code.length;
+                    setCodeStats({ lines, chars });
+
+                } catch (err) {
+                    const errorMsg = `JSON解析错误: ${err.message}`;
+                    setError(errorMsg);
+
+                    const errorCode = `// ${errorMsg}\n// 请检查JSON格式是否正确`;
+                    setGeneratedCode(errorCode);
+
+                    if (codeEditorInstance.current) {
+                        codeEditorInstance.current.setValue(errorCode);
+                    }
+
+                    setCodeStats({ lines: 2, chars: errorCode.length });
+                } finally {
+                    setIsGenerating(false);
+                }
+            }, [lang, goTags, structName, jsonText]);
+
+            // 格式化JSON
             const formatJson = () => {
                 try {
-                    const jsonObj = JSON.parse(inputJson.value);
-                    inputJson.value = JSON.stringify(jsonObj, null, 2);
-                    convertJson();
-                    showToastMessage('JSON 格式化成功');
-                } catch (error) {
-                    showToastMessage('JSON 格式错误');
+                    const jsonValue = jsonEditorInstance.current?.getValue() || jsonText;
+                    const obj = JSON.parse(jsonValue);
+                    const formatted = JSON.stringify(obj, null, 2);
+
+                    if (jsonEditorInstance.current) {
+                        jsonEditorInstance.current.setValue(formatted);
+                    }
+                    setJsonText(formatted);
+                    setError("");
+                } catch (err) {
+                    setError(`格式化错误: ${err.message}`);
                 }
             };
 
-            const loadExample = () => {
-                inputJson.value = `{
-"user": {
-"id": 12345,
-"username": "john_doe",
-"email": "john@example.com",
-"profile": {
-  "firstName": "John",
-  "lastName": "Doe",
-  "age": 30,
-  "isActive": true,
-  "address": {
-    "street": "123 Main St",
-    "city": "New York",
-    "country": "USA",
-    "zipCode": "10001"
-  }
-},
-"roles": ["admin", "user"],
-"preferences": {
-  "theme": "dark",
-  "notifications": true,
-  "language": "en"
-},
-"createdAt": "2023-10-01T10:00:00Z",
-"updatedAt": "2023-10-01T12:00:00Z"
-},
-"metadata": {
-"version": "1.0",
-"count": 1,
-"timestamp": "2023-10-01T12:00:00Z"
-}
-}`;
-                convertJson();
-                showToastMessage('示例数据已加载');
+            // 重置JSON
+            const resetJson = () => {
+                if (jsonEditorInstance.current) {
+                    jsonEditorInstance.current.setValue(DEFAULT_JSON);
+                }
+                setJsonText(DEFAULT_JSON);
+                setError("");
             };
 
-            const copyCode = async () => {
-                try {
-                    await navigator.clipboard.writeText(outputCode.value);
-                    showToastMessage('代码已复制到剪贴板');
-                } catch (error) {
-                    // 降级方案
-                    const textArea = document.createElement('textarea');
-                    textArea.value = outputCode.value;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textArea);
-                    showToastMessage('代码已复制到剪贴板');
+            // 复制代码到剪贴板
+            const copyCode = () => {
+                if (generatedCode) {
+                    navigator.clipboard.writeText(generatedCode)
+                        .then(() => {
+                            // 可以在这里添加一个临时提示
+                            console.log("代码已复制到剪贴板");
+                        })
+                        .catch(err => {
+                            console.error("复制失败:", err);
+                        });
                 }
             };
 
+            // 下载代码
             const downloadCode = () => {
-                if (!outputCode.value.trim()) {
-                    showToastMessage('没有代码可下载');
-                    return;
-                }
+                if (!generatedCode) return;
 
-                const blob = new Blob([outputCode.value], { type: 'text/plain' });
+                const blob = new Blob([generatedCode], { type: 'text/plain' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                const extension = selectedLanguage.value === 'go' ? 'go' :
-                                selectedLanguage.value === 'java' ? 'java' :
-                                selectedLanguage.value === 'typescript' ? 'ts' :
-                                selectedLanguage.value === 'python' ? 'py' : 'txt';
                 a.href = url;
-                a.download = `${options.value.rootName || 'struct'}.${extension}`;
+                a.download = `${structName}.${LANGUAGE_CONFIG[lang].fileExt}`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                showToastMessage('文件下载开始');
             };
 
-            const resetAll = () => {
-                inputJson.value = '';
-                outputCode.value = '';
-                selectedLanguage.value = 'go';
-                goTags.value = ['json', 'gorm'];
-                options.value = {
-                    snakeCase: false,
-                    publicFields: true,
-                    rootName: 'AutoGenerated'
-                };
-                showToastMessage('已重置所有设置');
+            // 处理Go标签更新
+            const updateGoTag = (tag, checked) => {
+                setGoTags(prev => ({
+                    ...prev,
+                    [tag]: checked
+                }));
             };
 
-            const shareCode = () => {
-                const data = {
-                    json: inputJson.value,
-                    language: selectedLanguage.value,
-                    goTags: goTags.value,
-                    options: options.value
-                };
-                try {
-                    const encoded = btoa(JSON.stringify(data));
-                    const url = `${window.location.origin}${window.location.pathname}#${encoded}`;
+            return React.createElement("div", { className: "app-container" },
+                // 头部
+                React.createElement("div", { className: "header" },
+                    React.createElement("h1", null,
+                        React.createElement("i", { className: "fas fa-code" }),
+                        "JSON → 多语言结构体生成器"
+                    ),
+                    React.createElement("div", { className: "subtitle" },
+                        "支持 Golang, Java, TypeScript, Python, Kotlin, Rust"
+                    )
+                ),
 
-                    navigator.clipboard.writeText(url).then(() => {
-                        showToastMessage('分享链接已复制到剪贴板');
-                    });
-                } catch (error) {
-                    showToastMessage('生成分享链接失败');
+                // 配置面板
+                React.createElement("div", { className: "config-panel" },
+                    React.createElement("div", { className: "config-content" },
+                        // 语言选择
+                        React.createElement("div", { className: "config-group" },
+                            React.createElement("label", { htmlFor: "language-select" }, "目标语言"),
+                            React.createElement("div", { className: "language-select" },
+                                React.createElement("select", {
+                                        id: "language-select",
+                                        value: lang,
+                                        onChange: (e) => setLang(e.target.value)
+                                    },
+                                    Object.entries(LANGUAGE_CONFIG).map(([value, config]) =>
+                                        React.createElement("option", { key: value, value: value },
+                                            `${config.icon} ${config.name}`
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+
+                        // 结构体名称
+                        lang === "go" && React.createElement("div", { className: "config-group" },
+                            React.createElement("label", { htmlFor: "struct-name" }, "结构体名称"),
+                            React.createElement("input", {
+                                id: "struct-name",
+                                type: "text",
+                                value: structName,
+                                onChange: (e) => setStructName(e.target.value),
+                                style: {
+                                    background: "#1e293b",
+                                    color: "#f1f5f9",
+                                    border: "1px solid #475569",
+                                    padding: "10px 12px",
+                                    borderRadius: "8px",
+                                    fontSize: "14px",
+                                    width: "120px"
+                                }
+                            })
+                        ),
+
+                        // Go标签选项
+                        lang === "go" && React.createElement("div", { className: "go-tags-container" },
+                            React.createElement("span", { style: { fontSize: "14px", color: "#cbd5e1", marginRight: "8px" } }, "标签:"),
+                            Object.entries(goTags).map(([tag, checked]) =>
+                                React.createElement("div", { className: "tag-checkbox", key: tag },
+                                    React.createElement("input", {
+                                        type: "checkbox",
+                                        id: `tag-${tag}`,
+                                        checked: checked,
+                                        onChange: (e) => updateGoTag(tag, e.target.checked)
+                                    }),
+                                    React.createElement("label", { htmlFor: `tag-${tag}` }, tag)
+                                )
+                            )
+                        ),
+
+                        // 操作按钮
+                        React.createElement("div", { className: "action-buttons" },
+                            React.createElement("button", {
+                                    className: "btn btn-secondary",
+                                    onClick: formatJson
+                                },
+                                React.createElement("i", { className: "fas fa-indent" }),
+                                "格式化JSON"
+                            ),
+                            React.createElement("button", {
+                                    className: "btn btn-secondary",
+                                    onClick: resetJson
+                                },
+                                React.createElement("i", { className: "fas fa-redo" }),
+                                "重置"
+                            ),
+                            React.createElement("button", {
+                                    className: "btn btn-primary",
+                                    onClick: generateCode,
+                                    disabled: isGenerating
+                                },
+                                isGenerating
+                                    ? React.createElement(React.Fragment, null,
+                                        React.createElement("i", { className: "fas fa-spinner fa-spin" }),
+                                        "生成中..."
+                                    )
+                                    : React.createElement(React.Fragment, null,
+                                        React.createElement("i", { className: "fas fa-bolt" }),
+                                        "生成代码"
+                                    )
+                            )
+                        )
+                    ),
+
+                    // 错误信息
+                    error && React.createElement("div", { className: "error-message" },
+                        React.createElement("i", { className: "fas fa-exclamation-triangle" }),
+                        error
+                    )
+                ),
+
+                // 编辑器面板
+                React.createElement("div", { className: "editor-panels" },
+                    // JSON编辑器
+                    React.createElement("div", { className: "panel json-panel" },
+                        React.createElement("div", { className: "panel-header" },
+                            React.createElement("div", { className: "panel-title" },
+                                React.createElement("i", { className: "fas fa-code" }),
+                                "JSON 输入"
+                            ),
+                            React.createElement("div", { className: "panel-stats" },
+                                `${jsonStats.lines} 行, ${jsonStats.chars} 字符`
+                            )
+                        ),
+                        React.createElement("div", {
+                            ref: jsonEditorRef,
+                            className: "panel-content"
+                        })
+                    ),
+
+                    // 代码输出
+                    React.createElement("div", { className: "panel code-panel" },
+                        React.createElement("div", { className: "panel-header" },
+                            React.createElement("div", { className: "panel-title" },
+                                React.createElement("i", { className: "fas fa-file-code" }),
+                                `${LANGUAGE_CONFIG[lang].name} 代码`
+                            ),
+                            React.createElement("div", { className: "panel-stats" },
+                                `${codeStats.lines} 行, ${codeStats.chars} 字符`
+                            )
+                        ),
+                        React.createElement("div", {
+                            ref: codeEditorRef,
+                            className: "panel-content"
+                        })
+                    )
+                ),
+
+                // 状态栏
+                React.createElement("div", { className: "status-bar" },
+                    React.createElement("div", { className: "status-item" },
+                        React.createElement("div", { className: "language-badge" },
+                            React.createElement("i", { className: "fas fa-code" }),
+                            LANGUAGE_CONFIG[lang].name
+                        )
+                    ),
+                    React.createElement("div", { className: "status-item" },
+                        React.createElement("i", { className: "fas fa-info-circle info-icon" }),
+                        React.createElement("span", null,
+                            lang === "go" ? "支持 json, mapstructure, gorm 等标签" :
+                                "自动推断类型并生成结构体/类定义"
+                        )
+                    ),
+                    React.createElement("div", { className: "status-item" },
+                        React.createElement("button", {
+                                className: "btn btn-secondary",
+                                onClick: copyCode,
+                                style: { padding: "6px 12px", fontSize: "13px" },
+                                disabled: !generatedCode
+                            },
+                            React.createElement("i", { className: "fas fa-copy" }),
+                            "复制"
+                        ),
+                        React.createElement("button", {
+                                className: "btn btn-secondary",
+                                onClick: downloadCode,
+                                style: { padding: "6px 12px", fontSize: "13px" },
+                                disabled: !generatedCode
+                            },
+                            React.createElement("i", { className: "fas fa-download" }),
+                            "下载"
+                        )
+                    )
+                )
+            );
+        }
+
+        // 代码生成函数
+        function generateCodeFromObject(obj, lang, structName, goTags) {
+            if (lang === "go") return genGo(obj, structName, goTags);
+            if (lang === "typescript") return genTypeScript(obj, structName);
+            if (lang === "java") return genJava(obj, structName);
+            if (lang === "python") return genPython(obj, structName);
+            if (lang === "kotlin") return genKotlin(obj, structName);
+            if (lang === "rust") return genRust(obj, structName);
+            return `// 不支持的语言: ${lang}`;
+        }
+
+        // 类型推断辅助函数
+        function inferType(value, lang) {
+            if (value === null) return lang === "typescript" ? "null" : "any";
+
+            if (Array.isArray(value)) {
+                if (value.length === 0) {
+                    if (lang === "go") return "[]interface{}";
+                    if (lang === "typescript") return "any[]";
+                    if (lang === "java") return "List<Object>";
+                    if (lang === "kotlin") return "List<Any>";
+                    if (lang === "rust") return "Vec<serde_json::Value>";
+                    return "list";
                 }
-            };
 
-            const runInPlayground = () => {
-                const playgroundUrls = {
-                    go: 'https://play.golang.org',
-                    java: 'https://replit.com/languages/java',
-                    typescript: 'https://www.typescriptlang.org/play',
-                    python: 'https://www.python.org/shell/'
-                };
+                const itemType = inferType(value[0], lang);
+                if (lang === "go") return `[]${itemType}`;
+                if (lang === "typescript") return `${itemType}[]`;
+                if (lang === "java") return `List<${itemType}>`;
+                if (lang === "kotlin") return `List<${itemType}>`;
+                if (lang === "rust") return `Vec<${itemType}>`;
+                if (lang === "python") return `List[${itemType}]`;
+            }
 
-                const url = playgroundUrls[selectedLanguage.value];
-                if (url) {
-                    window.open(url, '_blank');
-                } else {
-                    showToastMessage('该语言暂无在线运行环境');
+            if (typeof value === "object") {
+                if (lang === "go") return "struct";
+                if (lang === "typescript") return "any";
+                if (lang === "java") return "Object";
+                if (lang === "kotlin") return "Any";
+                if (lang === "rust") return "serde_json::Value";
+                if (lang === "python") return "dict";
+            }
+
+            switch (typeof value) {
+                case "number":
+                    if (Number.isInteger(value)) {
+                        if (lang === "go") return "int";
+                        if (lang === "typescript") return "number";
+                        if (lang === "java") return "Integer";
+                        if (lang === "kotlin") return "Int";
+                        if (lang === "rust") return "i64";
+                        if (lang === "python") return "int";
+                    } else {
+                        if (lang === "go") return "float64";
+                        if (lang === "typescript") return "number";
+                        if (lang === "java") return "Double";
+                        if (lang === "kotlin") return "Double";
+                        if (lang === "rust") return "f64";
+                        if (lang === "python") return "float";
+                    }
+                    break;
+                case "string":
+                    if (lang === "go") return "string";
+                    if (lang === "typescript") return "string";
+                    if (lang === "java") return "String";
+                    if (lang === "kotlin") return "String";
+                    if (lang === "rust") return "String";
+                    if (lang === "python") return "str";
+                    break;
+                case "boolean":
+                    if (lang === "go") return "bool";
+                    if (lang === "typescript") return "boolean";
+                    if (lang === "java") return "Boolean";
+                    if (lang === "kotlin") return "Boolean";
+                    if (lang === "rust") return "bool";
+                    if (lang === "python") return "bool";
+                    break;
+            }
+
+            return "any";
+        }
+
+        // 生成Go代码
+        function genGo(obj, name, tags) {
+            let code = `type ${name} struct {\n`;
+
+            for (const [key, value] of Object.entries(obj)) {
+                const fieldName = capitalize(key);
+                const fieldType = inferType(value, "go");
+
+                // 构建标签
+                let tagParts = [];
+                if (tags.json) {
+                    tagParts.push(`json:"${key}${tags.omitempty ? ",omitempty" : ""}"`);
                 }
-            };
-
-            const showToastMessage = (message) => {
-                toastMessage.value = message;
-                showToast.value = true;
-                setTimeout(() => {
-                    showToast.value = false;
-                }, 3000);
-            };
-
-            const toggleInstructions = () => {
-                showInstructions.value = !showInstructions.value;
-            };
-
-            const selectLanguage = (lang) => {
-                selectedLanguage.value = lang;
-                convertJson();
-            };
-
-            // 监听变化
-            watch(selectedLanguage, convertJson);
-            watch(goTags, convertJson);
-            watch(() => options.value, convertJson, { deep: true });
-
-            // 初始化
-            onMounted(() => {
-                loadExample();
-
-                // 监听URL hash以支持分享功能
-                if (window.location.hash) {
-                    try {
-                        const data = JSON.parse(atob(window.location.hash.slice(1)));
-                        inputJson.value = data.json;
-                        selectedLanguage.value = data.language;
-                        goTags.value = data.goTags;
-                        options.value = data.options;
-                        convertJson();
-                    } catch (error) {
-                        console.log('无法解析分享数据，使用默认示例');
+                if (tags.mapstructure) {
+                    tagParts.push(`mapstructure:"${key}"`);
+                }
+                if (tags.gorm) {
+                    tagParts.push(`gorm:"column:${key}"`);
+                }
+                if (tags.yaml) {
+                    tagParts.push(`yaml:"${key}"`);
+                }
+                if (tags.xml) {
+                    tagParts.push(`xml:"${key}"`);
+                }
+                if (tags.validate) {
+                    const validateRules = [];
+                    if (typeof value === "string") {
+                        if (value.includes("@")) validateRules.push("email");
+                        if (key.toLowerCase().includes("url")) validateRules.push("url");
+                    }
+                    if (typeof value === "number") validateRules.push("numeric");
+                    if (validateRules.length > 0) {
+                        tagParts.push(`validate:"${validateRules.join(",")}"`);
                     }
                 }
+
+                const tagStr = tagParts.length > 0 ? ` \`${tagParts.join(" ")}\`` : "";
+
+                // 处理嵌套结构
+                if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+                    code += `  ${fieldName} ${genGoStruct(value, capitalize(key), tags, 1)}${tagStr}\n`;
+                } else if (Array.isArray(value) && value.length > 0 && typeof value[0] === "object") {
+                    // 对象数组 - 生成嵌套类型
+                    const itemTypeName = capitalize(key.slice(0, -1)); // 去除复数s
+                    code += `  ${fieldName} []${itemTypeName}${tagStr}\n`;
+                    code += genGoStruct(value[0], itemTypeName, tags, 0);
+                } else {
+                    code += `  ${fieldName} ${fieldType}${tagStr}\n`;
+                }
+            }
+
+            code += "}";
+            return code;
+        }
+
+        // 递归生成Go结构体（用于嵌套对象）
+        function genGoStruct(obj, name, tags, indent) {
+            let indentStr = "  ".repeat(indent);
+            let code = `${indentStr}${name} struct {\n`;
+
+            for (const [key, value] of Object.entries(obj)) {
+                const fieldName = capitalize(key);
+                const fieldType = inferType(value, "go");
+
+                // 构建标签
+                let tagParts = [];
+                if (tags.json) {
+                    tagParts.push(`json:"${key}${tags.omitempty ? ",omitempty" : ""}"`);
+                }
+                if (tags.mapstructure) {
+                    tagParts.push(`mapstructure:"${key}"`);
+                }
+
+                const tagStr = tagParts.length > 0 ? ` \`${tagParts.join(" ")}\`` : "";
+
+                if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+                    code += `${indentStr}  ${fieldName} ${genGoStruct(value, capitalize(key), tags, indent + 1)}${tagStr}\n`;
+                } else {
+                    code += `${indentStr}  ${fieldName} ${fieldType}${tagStr}\n`;
+                }
+            }
+
+            code += `${indentStr}}`;
+            return code;
+        }
+
+        // 生成TypeScript代码
+        function genTypeScript(obj, name) {
+            let code = `interface ${name} {\n`;
+
+            for (const [key, value] of Object.entries(obj)) {
+                const fieldType = inferType(value, "typescript");
+                code += `  ${key}: ${fieldType};\n`;
+            }
+
+            code += "}";
+            return code;
+        }
+
+        // 生成Java代码
+        function genJava(obj, name) {
+            let code = `import com.fasterxml.jackson.annotation.JsonProperty;\n`;
+            code += `import lombok.Data;\n`;
+            code += `import java.util.List;\n\n`;
+            code += `@Data\n`;
+            code += `public class ${name} {\n`;
+
+            for (const [key, value] of Object.entries(obj)) {
+                const fieldType = inferType(value, "java");
+                const fieldName = key;
+
+                code += `  @JsonProperty("${key}")\n`;
+                code += `  private ${fieldType} ${fieldName};\n`;
+            }
+
+            code += "}";
+            return code;
+        }
+
+        // 生成Python代码
+        function genPython(obj, name) {
+            let code = `from typing import Optional, List, Dict, Any\n`;
+            code += `from pydantic import BaseModel\n\n`;
+            code += `class ${name}(BaseModel):\n`;
+
+            for (const [key, value] of Object.entries(obj)) {
+                const fieldType = inferType(value, "python");
+                code += `    ${key}: ${fieldType}\n`;
+            }
+
+            return code;
+        }
+
+        // 生成Kotlin代码
+        function genKotlin(obj, name) {
+            let code = `import com.fasterxml.jackson.annotation.JsonProperty\n\n`;
+            code += `data class ${name}(\n`;
+
+            const entries = Object.entries(obj);
+            entries.forEach(([key, value], index) => {
+                const fieldType = inferType(value, "kotlin");
+                const comma = index < entries.length - 1 ? "," : "";
+                code += `    @JsonProperty("${key}")\n`;
+                code += `    val ${key}: ${fieldType}${comma}\n`;
             });
 
-            return {
-                inputJson,
-                outputCode,
-                selectedLanguage,
-                goTags,
-                jsonError,
-                showToast,
-                toastMessage,
-                lastUpdate,
-                showInstructions,
-                options,
-                languages,
-                languageNames,
-                convertJson,
-                formatJson,
-                loadExample,
-                copyCode,
-                downloadCode,
-                resetAll,
-                shareCode,
-                runInPlayground,
-                showToastMessage,
-                toggleInstructions,
-                selectLanguage
-            };
+            code += ")";
+            return code;
         }
-    }).mount('#app');
+
+        // 生成Rust代码
+        function genRust(obj, name) {
+            let code = `use serde::{Deserialize, Serialize};\n\n`;
+            code += `#[derive(Debug, Serialize, Deserialize)]\n`;
+            code += `pub struct ${name} {\n`;
+
+            for (const [key, value] of Object.entries(obj)) {
+                const fieldType = inferType(value, "rust");
+                code += `    #[serde(rename = "${key}")]\n`;
+                code += `    pub ${key}: ${fieldType},\n`;
+            }
+
+            code = code.slice(0, -2) + "\n"; // 移除最后一个逗号
+            code += "}";
+            return code;
+        }
+
+        // 工具函数：首字母大写
+        function capitalize(s) {
+            if (!s) return "";
+            return s.charAt(0).toUpperCase() + s.slice(1);
+        }
+
+        // 渲染应用
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    });
 </script>
 </body>
 </html>
