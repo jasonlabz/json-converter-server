@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8" />
     <title>JSON → 多语言结构体生成器</title>
-
-    <!-- 图标库 -->
     <link rel="stylesheet" href="./libs/font-awesome/6.4.0/css/all.min.css">
-
     <style>
+        /* CSS样式（包含修复） */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -27,19 +25,19 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            padding: 16px;
-            gap: 16px;
+            padding: 12px;
+            gap: 12px;
         }
 
         .header {
             text-align: center;
-            padding: 12px 0;
+            padding: 8px 0;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         .header h1 {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 600;
             background: linear-gradient(90deg, #60a5fa, #a78bfa);
             -webkit-background-clip: text;
@@ -47,42 +45,70 @@
             color: transparent;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .header .subtitle {
-            font-size: 14px;
+            font-size: 12px;
             color: #94a3b8;
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
         .config-panel {
             background: rgba(30, 41, 59, 0.8);
-            border-radius: 12px;
-            padding: 18px;
+            border-radius: 10px;
+            padding: 12px 16px;
             border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(10px);
         }
 
         .config-content {
             display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .config-row {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
             flex-wrap: wrap;
-            gap: 20px;
-            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .code-gen-config {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .config-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 4px;
+            min-width: 100px;
         }
 
-        .config-group label {
-            font-size: 13px;
-            font-weight: 500;
-            color: #cbd5e1;
-            white-space: nowrap;
+        .compact-group {
+            margin-bottom: 0;
+        }
+
+        .compact-group label {
+            font-size: 11px;
+            margin-bottom: 2px;
         }
 
         .language-select {
@@ -93,15 +119,21 @@
             background: #1e293b;
             color: #f1f5f9;
             border: 1px solid #475569;
-            padding: 10px 16px;
-            border-radius: 8px;
-            font-size: 14px;
+            padding: 8px 12px;
+            padding-right: 32px;
+            border-radius: 6px;
+            font-size: 13px;
             font-weight: 500;
-            min-width: 180px;
+            min-width: 120px;
             cursor: pointer;
             transition: all 0.2s;
             appearance: none;
-            padding-right: 40px;
+        }
+
+        .compact-select {
+            padding: 6px 10px;
+            min-width: 100px;
+            font-size: 12px;
         }
 
         .language-select select:hover {
@@ -118,62 +150,91 @@
         .language-select::after {
             content: "▼";
             position: absolute;
-            right: 16px;
+            right: 10px;
             top: 50%;
             transform: translateY(-50%);
             color: #94a3b8;
-            font-size: 12px;
+            font-size: 10px;
             pointer-events: none;
         }
 
         .checkbox-options {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 6px;
+        }
+
+        .compact-options {
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .checkbox-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+        }
+
+        .compact-item {
+            gap: 4px;
         }
 
         .checkbox-item input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             cursor: pointer;
         }
 
         .checkbox-item label {
-            font-size: 13px;
+            font-size: 12px;
             color: #cbd5e1;
             cursor: pointer;
             user-select: none;
         }
 
+        .compact-item label {
+            font-size: 11px;
+            min-width: 32px;
+        }
+
         .go-tags-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
-            max-width: 400px;
+            max-width: 300px;
+        }
+
+        .compact-tags {
+            gap: 6px;
+            max-width: 280px;
         }
 
         .tag-checkbox {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
+        }
+
+        .compact-tag {
+            gap: 3px;
         }
 
         .tag-checkbox input[type="checkbox"] {
             appearance: none;
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
             border: 2px solid #475569;
-            border-radius: 4px;
+            border-radius: 3px;
             cursor: pointer;
             position: relative;
             transition: all 0.2s;
+        }
+
+        .compact-tag input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
         }
 
         .tag-checkbox input[type="checkbox"]:checked {
@@ -185,37 +246,122 @@
             content: "✓";
             position: absolute;
             color: white;
-            font-size: 12px;
+            font-size: 10px;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
         }
 
         .tag-checkbox label {
-            font-size: 13px;
+            font-size: 11px;
             color: #cbd5e1;
             cursor: pointer;
             user-select: none;
         }
 
+        .compact-tag label {
+            font-size: 10px;
+            padding: 1px 3px;
+        }
+
         .action-buttons {
             display: flex;
-            gap: 10px;
-            margin-left: auto;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 0;
+        }
+
+        .compact-actions {
+            gap: 6px;
+            display: flex;
+            align-items: center;
             flex-wrap: wrap;
         }
 
+        /* 内联开关样式 */
+        .mode-switch-inline {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-right: 10px;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .mode-switch-inline .switch {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 18px;
+            margin: 0;
+        }
+
+        .mode-switch-inline .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .mode-switch-inline .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #475569;
+            transition: .4s;
+            border-radius: 18px;
+        }
+
+        .mode-switch-inline .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .mode-switch-inline input:checked + .slider {
+            background: linear-gradient(90deg, #3b82f6, #6366f1);
+        }
+
+        .mode-switch-inline input:checked + .slider:before {
+            transform: translateX(18px);
+        }
+
+        .mode-switch-inline .switch-label {
+            font-size: 12px;
+            color: #cbd5e1;
+            user-select: none;
+            white-space: nowrap;
+        }
+
         .btn {
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 14px;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 13px;
             font-weight: 500;
             border: none;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            min-width: 90px;
+            justify-content: center;
+        }
+
+        .btn-compact {
+            padding: 6px 10px;
+            font-size: 12px;
+            min-width: 80px;
         }
 
         .btn-primary {
@@ -247,26 +393,28 @@
         }
 
         .btn-sm {
-            padding: 6px 12px;
-            font-size: 13px;
+            padding: 5px 10px;
+            font-size: 12px;
         }
 
         .editor-panels {
             display: flex;
             flex: 1;
-            gap: 16px;
+            gap: 12px;
             min-height: 0;
+            height: calc(100vh - 240px);
         }
 
         .panel {
             display: flex;
             flex-direction: column;
             background: rgba(15, 23, 42, 0.8);
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             backdrop-filter: blur(10px);
+            height: 100%;
             transition: all 0.3s ease;
         }
 
@@ -274,33 +422,36 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 14px 18px;
+            padding: 10px 14px;
             background: rgba(30, 41, 59, 0.9);
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            min-height: 40px;
         }
 
         .panel-title {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 16px;
+            gap: 8px;
+            font-size: 14px;
             font-weight: 600;
             color: #f1f5f9;
         }
 
         .panel-title i {
             color: #60a5fa;
+            font-size: 14px;
         }
 
         .panel-stats {
-            font-size: 13px;
+            font-size: 11px;
             color: #94a3b8;
         }
 
         .panel-content {
             flex: 1;
             position: relative;
-            min-height: 0;
+            min-height: 300px;
+            overflow: hidden;
         }
 
         .json-panel {
@@ -313,12 +464,17 @@
             transform: translateX(0);
         }
 
+        /* 修复：使用CSS类控制隐藏 */
         .code-panel.hidden {
-            display: none;
+            display: none !important;
+            flex: 0;
+            width: 0;
+            min-width: 0;
         }
 
         .json-panel.full-width {
             flex: 1;
+            width: 100%;
         }
 
         .json-panel.partial-width {
@@ -329,11 +485,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 18px;
+            padding: 8px 14px;
             background: rgba(30, 41, 59, 0.9);
             border-top: 1px solid rgba(255, 255, 255, 0.08);
-            font-size: 13px;
+            font-size: 12px;
             color: #94a3b8;
+            min-height: 36px;
         }
 
         .status-item {
@@ -345,10 +502,10 @@
         .language-badge {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 16px;
+            font-size: 11px;
             font-weight: 500;
             background: rgba(59, 130, 246, 0.15);
             color: #60a5fa;
@@ -356,64 +513,97 @@
 
         .info-icon {
             color: #60a5fa;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         @media (max-width: 1200px) {
-            .config-content {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 16px;
+            .config-row {
+                gap: 12px;
             }
 
-            .action-buttons {
-                margin-left: 0;
-                width: 100%;
-                justify-content: flex-end;
-            }
-
-            .go-tags-container {
-                max-width: 100%;
+            .compact-group {
+                min-width: 100px;
             }
         }
 
         @media (max-width: 768px) {
+            .app-container {
+                padding: 8px;
+                gap: 8px;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+
             .editor-panels {
                 flex-direction: column;
+                height: auto;
             }
 
             .panel {
                 min-height: 300px;
             }
 
-            .action-buttons {
-                gap: 6px;
+            .config-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
             }
-            
-            .btn {
-                padding: 8px 12px;
-                font-size: 13px;
+
+            .mode-switch-inline {
+                order: -1;
+                width: 100%;
+                justify-content: center;
+                margin-right: 0;
+                margin-bottom: 8px;
+            }
+
+            .compact-actions {
+                justify-content: center;
+            }
+
+            .compact-group {
+                width: 100%;
+            }
+
+            .compact-input {
+                width: 100%;
+            }
+
+            .compact-select {
+                width: 100%;
+            }
+
+            .compact-actions {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .btn-compact {
+                flex: 1;
+                min-width: 60px;
+                padding: 5px 8px;
+                font-size: 11px;
+            }
+
+            .code-gen-config {
+                padding-top: 8px;
+                margin-top: 8px;
             }
         }
 
         .error-message {
             color: #f87171;
-            font-size: 13px;
-            margin-top: 8px;
+            font-size: 12px;
+            margin-top: 6px;
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
-        .config-row {
-            display: flex;
-            gap: 24px;
-            align-items: flex-start;
-            flex-wrap: wrap;
-        }
-
         .time-type-hint {
-            font-size: 11px;
+            font-size: 10px;
             color: #86efac;
             margin-top: 2px;
             display: inline-block;
@@ -430,9 +620,9 @@
             background: #1e293b;
             color: #f1f5f9;
             border: 1px solid #475569;
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 13px;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -448,125 +638,49 @@
         }
 
         .case-format-select {
-            min-width: 120px;
+            min-width: 100px;
         }
 
         /* 注释样式 */
         .comment-indicator {
             position: absolute;
-            right: 10px;
-            top: 10px;
+            right: 8px;
+            top: 8px;
             background: rgba(59, 130, 246, 0.2);
             color: #60a5fa;
-            padding: 4px 8px;
+            padding: 3px 6px;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 10px;
             display: flex;
             align-items: center;
             gap: 4px;
             z-index: 10;
         }
 
-        /* 开关样式 */
-        .switch-container {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 24px;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #475569;
-            transition: .4s;
-            border-radius: 24px;
-        }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 16px;
-            width: 16px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .slider {
-            background: linear-gradient(90deg, #3b82f6, #6366f1);
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-
-        .switch-label {
-            font-size: 13px;
-            color: #cbd5e1;
-            user-select: none;
-        }
-
         .generation-info {
             background: rgba(59, 130, 246, 0.1);
             border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 8px;
-            padding: 10px;
-            margin-top: 12px;
-            font-size: 13px;
-        }
-
-        .generation-info-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 4px;
-        }
-
-        .generation-info-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .generation-info-label {
-            color: #94a3b8;
-        }
-
-        .generation-info-value {
-            color: #60a5fa;
-            font-weight: 500;
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 12px;
         }
 
         .generation-info-compact {
             display: flex;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
         }
 
         .generation-info-group {
             display: flex;
-            gap: 16px;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
         .generation-info-stat {
-            font-size: 13px;
+            font-size: 11px;
         }
 
         .generation-info-stat .label {
@@ -576,7 +690,7 @@
         .generation-info-stat .value {
             color: #60a5fa;
             font-weight: 500;
-            margin-left: 4px;
+            margin-left: 2px;
         }
 
         .generation-info-stat .value.warning {
@@ -586,14 +700,43 @@
         .warning-message {
             background: rgba(245, 158, 11, 0.1);
             border: 1px solid rgba(245, 158, 11, 0.2);
-            border-radius: 8px;
-            padding: 10px;
-            margin-top: 12px;
-            font-size: 13px;
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 11px;
             color: #fbbf24;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+        }
+
+        /* 输入框样式 */
+        .compact-input {
+            background: #1e293b;
+            color: #f1f5f9;
+            border: 1px solid #475569;
+            padding: 6px 8px;
+            border-radius: 5px;
+            font-size: 12px;
+            width: 100px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .compact-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        /* 折叠区域样式 */
+        .fold-widget {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+        }
+
+        /* 确保编辑器有足够高度 */
+        .monaco-editor {
+            height: 100% !important;
         }
     </style>
 </head>
@@ -670,7 +813,7 @@
             /(time|date|timestamp|created|updated|start|end|at)$/i
         ];
 
-        // 默认JSON（包含注释）
+        // 默认JSON（包含注释和URL测试）
         const DEFAULT_JSON = `{
   // 用户ID
   "user_id": 12345,
@@ -713,14 +856,12 @@
   ]
 }`;
 
-        // 复杂JSON示例 - 包含不同结构的数组
+        // 复杂JSON示例
         const COMPLEX_JSON = `{
-  "地址": "",
+  // 测试URL包含//的情况
   "doc_url": "http://localhost",
-  "docUrl": "http://localhost",
-  "int1": 1,
-  "int2": 3000000000,
-  "float": 1.15,
+  "another_url": "https://example.com//path",
+  // 混合结构数组
   "mixed_array": [
     {
       "a3": "123"
@@ -728,43 +869,7 @@
     {
       "b3": "",
       "c3": "extra"
-    },
-    {
-      "a3": "456",
-      "d3": "test"
     }
-  ],
-  "a": [
-    [
-      {
-        "a1": {
-          "a2": [
-            {
-              "a3": "123"
-            },
-            {
-              "b3": ""
-            }
-          ]
-        }
-      },
-      {
-        "a1": {
-          "a2": [
-            {
-              "a3": 123
-            },
-            {
-              "c3": ""
-            }
-          ],
-          "b2": ""
-        },
-        "b1": {
-          "b2": ""
-        }
-      }
-    ]
   ]
 }`;
 
@@ -827,32 +932,45 @@
             // 数组合并工具函数
             const mergeArrayItems = useCallback((array) => {
                 if (!array || array.length <= 1) return array;
-                
-                // 检查是否所有对象都有相同的结构
-                const firstKeys = Object.keys(array[0] || {});
+
+                const firstItem = array[0];
+                if (!firstItem || typeof firstItem !== 'object' || Array.isArray(firstItem)) {
+                    return array;
+                }
+
+                const checkStructure = (item) => {
+                    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+                        return null;
+                    }
+                    return Object.keys(item).sort();
+                };
+
+                const firstKeys = checkStructure(firstItem);
+                if (!firstKeys) return array;
+
                 let allSameStructure = true;
-                
                 for (let i = 1; i < array.length; i++) {
-                    const currentKeys = Object.keys(array[i] || {});
-                    if (currentKeys.length !== firstKeys.length || 
-                        !currentKeys.every(key => firstKeys.includes(key))) {
+                    const currentKeys = checkStructure(array[i]);
+                    if (!currentKeys || JSON.stringify(currentKeys) !== JSON.stringify(firstKeys)) {
                         allSameStructure = false;
                         break;
                     }
                 }
-                
+
                 if (allSameStructure) return array;
-                
-                // 收集所有可能的字段
+
                 const allFields = new Set();
                 array.forEach(item => {
-                    if (item && typeof item === 'object') {
+                    if (item && typeof item === 'object' && !Array.isArray(item)) {
                         Object.keys(item).forEach(key => allFields.add(key));
                     }
                 });
-                
-                // 创建新的数组，确保每个对象都有所有字段
+
                 return array.map(item => {
+                    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+                        return item;
+                    }
+
                     const mergedItem = {};
                     allFields.forEach(field => {
                         mergedItem[field] = item && item.hasOwnProperty(field) ? item[field] : '';
@@ -860,6 +978,49 @@
                     return mergedItem;
                 });
             }, []);
+
+            // 处理对象函数
+            const processObject = useCallback((data) => {
+                if (!mergeArrayFields) return data;
+
+                const process = (item) => {
+                    if (Array.isArray(item)) {
+                        if (item.length > 0) {
+                            const firstItem = item[0];
+                            if (firstItem && typeof firstItem === 'object') {
+                                const processedArray = mergeArrayItems(item).map(process);
+                                return processedArray;
+                            } else if (Array.isArray(firstItem)) {
+                                return item.map(subArray => {
+                                    if (Array.isArray(subArray) && subArray.length > 0) {
+                                        const subFirstItem = subArray[0];
+                                        if (subFirstItem && typeof subFirstItem === 'object') {
+                                            return mergeArrayItems(subArray).map(process);
+                                        }
+                                    }
+                                    return subArray.map(process);
+                                });
+                            }
+                        }
+                        return item;
+                    } else if (item && typeof item === 'object') {
+                        const result = {};
+                        Object.entries(item).forEach(([key, value]) => {
+                            if (Array.isArray(value)) {
+                                result[key] = process(value);
+                            } else if (value && typeof value === 'object') {
+                                result[key] = process(value);
+                            } else {
+                                result[key] = value;
+                            }
+                        });
+                        return result;
+                    }
+                    return item;
+                };
+
+                return process(JSON.parse(JSON.stringify(data)));
+            }, [mergeArrayFields, mergeArrayItems]);
 
             // 初始化编辑器
             useEffect(() => {
@@ -870,14 +1031,26 @@
                         theme: "vs-dark",
                         automaticLayout: true,
                         folding: true,
+                        foldingStrategy: "indentation",
+                        foldingHighlight: true,
+                        foldingImportsByDefault: true,
+                        showFoldingControls: "always",
                         minimap: { enabled: true },
                         scrollBeyondLastLine: false,
-                        fontSize: 14,
+                        fontSize: 13,
                         lineNumbers: "on",
                         glyphMargin: true,
+                        lineDecorationsWidth: 20,
+                        renderLineHighlight: "all",
                         formatOnPaste: true,
                         formatOnType: true,
-                        wordWrap: "on"
+                        wordWrap: "off",
+                        renderWhitespace: "selection",
+                        quickSuggestions: true,
+                        suggestOnTriggerCharacters: true,
+                        acceptSuggestionOnEnter: "on",
+                        tabCompletion: "on",
+                        wordBasedSuggestions: true
                     });
 
                     // 监听内容变化
@@ -885,14 +1058,14 @@
                         const value = jsonEditorInstance.current.getValue();
                         setJsonText(value);
 
-                        // 计算统计信息
                         const lines = value.split('\n').length;
                         const chars = value.length;
-                        const commentLines = (value.match(/\/\/.*/g) || []).length;
+                        const commentLines = (value.match(/\/\/.*$/g) || []).length;
                         setJsonStats({ lines, chars, commentLines });
                     });
                 }
 
+                // 修复：始终初始化代码编辑器，不依赖 isCodeGenMode
                 if (!codeEditorInstance.current && codeEditorRef.current) {
                     codeEditorInstance.current = monaco.editor.create(codeEditorRef.current, {
                         value: "// 请先生成代码\n// 点击\"生成代码\"按钮开始",
@@ -901,9 +1074,12 @@
                         readOnly: false,
                         automaticLayout: true,
                         folding: true,
+                        foldingStrategy: "indentation",
+                        foldingHighlight: true,
+                        showFoldingControls: "always",
                         minimap: { enabled: true },
                         scrollBeyondLastLine: false,
-                        fontSize: 14,
+                        fontSize: 13,
                         lineNumbers: "on"
                     });
                 }
@@ -918,7 +1094,7 @@
                         codeEditorInstance.current = null;
                     }
                 };
-            }, []);
+            }, []); // 空依赖数组，只在组件挂载/卸载时执行
 
             // 更新代码编辑器语言
             useEffect(() => {
@@ -930,43 +1106,97 @@
                 }
             }, [lang]);
 
-            // 处理JSON注释
+            // 改进的JSON注释解析函数
             const parseJsonWithComments = useCallback((jsonString) => {
                 try {
-                    // 首先尝试使用原生JSON.parse（处理没有注释的情况）
-                    const parsed = JSON.parse(jsonString);
-                    return { parsed, comments: { fieldComments: {} } };
-                } catch (e) {
-                    // 如果失败，尝试移除注释后解析
-                    try {
-                        // 移除单行注释
-                        const withoutComments = jsonString.replace(/\/\/.*$/gm, '');
-                        const parsed = JSON.parse(withoutComments);
-                        
-                        // 提取注释
-                        const comments = { fieldComments: {} };
-                        const lines = jsonString.split('\n');
-                        let currentField = '';
-                        
-                        lines.forEach((line, index) => {
-                            const singleLineCommentMatch = line.match(/\/\/(.*)$/);
-                            if (singleLineCommentMatch) {
-                                const comment = singleLineCommentMatch[1].trim();
-                                if (currentField) {
-                                    comments.fieldComments[currentField] = comment;
+                    const removeComments = (str) => {
+                        const lines = str.split('\n');
+                        const resultLines = [];
+
+                        lines.forEach(line => {
+                            let inString = false;
+                            let escaped = false;
+                            let cleanLine = '';
+
+                            for (let i = 0; i < line.length; i++) {
+                                const char = line[i];
+                                const nextChar = i + 1 < line.length ? line[i + 1] : '';
+
+                                if (!escaped && char === '\\') {
+                                    escaped = true;
+                                    cleanLine += char;
+                                } else if (!escaped && char === '"') {
+                                    inString = !inString;
+                                    cleanLine += char;
+                                } else if (!inString && char === '/' && nextChar === '/') {
+                                    break;
+                                } else {
+                                    cleanLine += char;
+                                    escaped = false;
                                 }
                             }
-                            
-                            // 查找字段定义
-                            const fieldMatch = line.match(/"([^"]+)":/);
+
+                            resultLines.push(cleanLine);
+                        });
+
+                        return resultLines.join('\n');
+                    };
+
+                    const withoutComments = removeComments(jsonString);
+                    const parsed = JSON.parse(withoutComments);
+
+                    const comments = { fieldComments: {} };
+                    const lines = jsonString.split('\n');
+                    let currentField = '';
+
+                    lines.forEach((line) => {
+                        let inString = false;
+                        let escaped = false;
+                        let commentStart = -1;
+
+                        for (let i = 0; i < line.length; i++) {
+                            const char = line[i];
+                            const nextChar = i + 1 < line.length ? line[i + 1] : '';
+
+                            if (!escaped && char === '\\') {
+                                escaped = true;
+                            } else if (!escaped && char === '"') {
+                                inString = !inString;
+                            } else if (!inString && char === '/' && nextChar === '/') {
+                                commentStart = i;
+                                break;
+                            } else {
+                                escaped = false;
+                            }
+                        }
+
+                        if (commentStart !== -1) {
+                            const comment = line.substring(commentStart + 2).trim();
+                            if (currentField && comment) {
+                                comments.fieldComments[currentField] = comment;
+                            }
+
+                            const beforeComment = line.substring(0, commentStart);
+                            const fieldMatch = beforeComment.match(/"([^"]+)":\s*$/);
                             if (fieldMatch) {
                                 currentField = fieldMatch[1];
                             }
-                        });
-                        
-                        return { parsed, comments };
-                    } catch (err) {
-                        throw new Error(`JSON解析失败: ${err.message}`);
+                        }
+
+                        const fieldMatch = line.match(/"([^"]+)":/);
+                        if (fieldMatch) {
+                            currentField = fieldMatch[1];
+                        }
+                    });
+
+                    return { parsed, comments };
+                } catch (err) {
+                    try {
+                        const withoutComments = jsonString.replace(/\/\/.*$/gm, '');
+                        const parsed = JSON.parse(withoutComments);
+                        return { parsed, comments: { fieldComments: {} } };
+                    } catch (err2) {
+                        throw new Error(`JSON解析失败: ${err2.message}`);
                     }
                 }
             }, []);
@@ -974,9 +1204,7 @@
             // 清理JSON：移除注释并格式化
             const cleanJson = useCallback((jsonString) => {
                 try {
-                    // 移除注释
                     const withoutComments = jsonString.replace(/\/\/.*$/gm, '');
-                    // 解析并重新格式化
                     const parsed = JSON.parse(withoutComments);
                     return JSON.stringify(parsed, null, 2);
                 } catch (err) {
@@ -1028,44 +1256,45 @@
 
                 const traverse = (data, depth = 0) => {
                     info.maxDepth = Math.max(info.maxDepth, depth);
-                    
+
                     if (Array.isArray(data)) {
                         info.arrays++;
-                        
-                        // 检查是否需要合并
-                        if (mergeArrayFields && data.length > 1 && 
-                            data.every(item => item && typeof item === 'object')) {
-                            
-                            // 检查数组元素结构是否一致
+
+                        if (mergeArrayFields && data.length > 1 &&
+                            data.every(item => item && typeof item === 'object' && !Array.isArray(item))) {
+
                             const firstKeys = Object.keys(data[0] || {});
                             let allSameStructure = true;
-                            
+
                             for (let i = 1; i < data.length; i++) {
                                 const currentKeys = Object.keys(data[i] || {});
-                                if (currentKeys.length !== firstKeys.length || 
+                                if (currentKeys.length !== firstKeys.length ||
                                     !currentKeys.every(key => firstKeys.includes(key))) {
                                     allSameStructure = false;
                                     break;
                                 }
                             }
-                            
+
                             if (!allSameStructure) {
                                 info.mergedArrays++;
                             }
                         }
-                        
-                        if (data.length > 0 && typeof data[0] === 'object') {
-                            data.forEach(item => traverse(item, depth + 1));
+
+                        if (data.length > 0) {
+                            const firstItem = data[0];
+                            if (firstItem && typeof firstItem === 'object') {
+                                data.forEach(item => traverse(item, depth + 1));
+                            }
                         }
                     } else if (data && typeof data === 'object') {
                         info.nestedObjects++;
                         Object.entries(data).forEach(([key, value]) => {
                             info.totalFields++;
-                            
+
                             if (detectTime && isTimeField(key, value)) {
                                 info.timeFields++;
                             }
-                            
+
                             if (value && typeof value === 'object') {
                                 traverse(value, depth + 1);
                             }
@@ -1074,8 +1303,7 @@
                 };
 
                 traverse(obj);
-                
-                // 添加警告
+
                 if (info.maxDepth > 5) {
                     info.warnings.push(`JSON嵌套深度较深 (${info.maxDepth} 层)，可能导致生成的结构体复杂`);
                 }
@@ -1085,11 +1313,11 @@
                 if (info.mergedArrays > 0) {
                     info.warnings.push(`已合并 ${info.mergedArrays} 个数组的不同结构字段`);
                 }
-                
+
                 return info;
             }, []);
 
-            // 生成代码
+            // 生成代码函数
             const generateCode = useCallback(() => {
                 setIsGenerating(true);
                 setError("");
@@ -1099,67 +1327,42 @@
                     const jsonValue = jsonEditorInstance.current?.getValue() || jsonText;
                     const { parsed: obj, comments } = parseJsonWithComments(jsonValue);
 
-                    // 检测时间字段
                     const timeFieldsCount = detectTime ? detectTimeFields(obj) : 0;
                     setTimeFieldsDetected(timeFieldsCount);
 
-                    // 收集生成信息
                     const genInfo = collectGenerationInfo(obj, lang, detectTime, mergeArrayFields);
                     setGenerationInfo(genInfo);
 
-                    // 如果需要合并数组字段，先处理对象
-                    const processObject = (data) => {
-                        if (!mergeArrayFields) return data;
-                        
-                        const process = (item) => {
-                            if (Array.isArray(item)) {
-                                if (item.length > 0 && typeof item[0] === 'object') {
-                                    return mergeArrayItems(item).map(process);
-                                }
-                                return item;
-                            } else if (item && typeof item === 'object') {
-                                const result = {};
-                                Object.entries(item).forEach(([key, value]) => {
-                                    if (Array.isArray(value)) {
-                                        result[key] = process(value);
-                                    } else if (value && typeof value === 'object') {
-                                        result[key] = process(value);
-                                    } else {
-                                        result[key] = value;
-                                    }
-                                });
-                                return result;
-                            }
-                            return item;
-                        };
-                        
-                        return process(JSON.parse(JSON.stringify(obj)));
-                    };
-
                     const processedObj = processObject(obj);
                     const code = generateCodeFromObject(
-                        processedObj, 
-                        lang, 
-                        structName, 
-                        goTags, 
-                        inlineStruct, 
+                        processedObj,
+                        lang,
+                        structName,
+                        goTags,
+                        inlineStruct,
                         detectTime,
                         includeComments ? comments : null,
                         caseFormat
                     );
-                    
+
                     setGeneratedCode(code);
 
-                    // 更新代码编辑器
+                    // 强制更新代码编辑器，无论是否可见
                     if (codeEditorInstance.current) {
                         const model = codeEditorInstance.current.getModel();
                         if (model) {
                             codeEditorInstance.current.pushUndoStop();
                             model.setValue(code);
+
+                            // 立即执行布局更新
+                            requestAnimationFrame(() => {
+                                if (codeEditorInstance.current) {
+                                    codeEditorInstance.current.layout();
+                                }
+                            });
                         }
                     }
 
-                    // 计算统计信息
                     const lines = code.split('\n').length;
                     const chars = code.length;
                     setCodeStats({ lines, chars });
@@ -1172,7 +1375,11 @@
                     setGeneratedCode(errorCode);
 
                     if (codeEditorInstance.current) {
-                        codeEditorInstance.current.setValue(errorCode);
+                        const model = codeEditorInstance.current.getModel();
+                        if (model) {
+                            codeEditorInstance.current.pushUndoStop();
+                            model.setValue(errorCode);
+                        }
                     }
 
                     setCodeStats({ lines: 2, chars: errorCode.length });
@@ -1181,20 +1388,97 @@
                 } finally {
                     setIsGenerating(false);
                 }
-            }, [lang, goTags, structName, inlineStruct, detectTime, jsonText, mergeArrayFields, detectTimeFields, includeComments, caseFormat, parseJsonWithComments, collectGenerationInfo, mergeArrayItems]);
+            }, [lang, goTags, structName, inlineStruct, detectTime, jsonText, mergeArrayFields, detectTimeFields, includeComments, caseFormat, parseJsonWithComments, collectGenerationInfo, processObject]);
 
-            // JSON工具函数
+            // 改进的JSON格式化函数
             const formatJson = () => {
                 try {
                     const jsonValue = jsonEditorInstance.current?.getValue() || jsonText;
-                    const formatted = cleanJson(jsonValue);
+
+                    const formatJsonWithComments = (jsonString) => {
+                        const lines = jsonString.split('\n');
+                        const resultLines = [];
+                        let inString = false;
+                        let escaped = false;
+                        let currentLine = '';
+                        const commentMap = [];
+
+                        for (let i = 0; i < lines.length; i++) {
+                            const line = lines[i];
+                            let lineContent = '';
+                            let lineComment = '';
+                            inString = false;
+                            escaped = false;
+
+                            for (let j = 0; j < line.length; j++) {
+                                const char = line[j];
+                                const nextChar = j + 1 < line.length ? line[j + 1] : '';
+
+                                if (!escaped && char === '\\') {
+                                    escaped = true;
+                                    lineContent += char;
+                                } else if (!escaped && char === '"') {
+                                    inString = !inString;
+                                    lineContent += char;
+                                } else if (!inString && char === '/' && nextChar === '/') {
+                                    lineComment = line.substring(j);
+                                    break;
+                                } else {
+                                    lineContent += char;
+                                    escaped = false;
+                                }
+                            }
+
+                            if (lineComment) {
+                                commentMap.push({
+                                    line: i,
+                                    comment: lineComment.trim(),
+                                    content: lineContent.trim()
+                                });
+                            }
+                            resultLines.push(lineContent.trim());
+                        }
+
+                        const jsonWithoutComments = resultLines.join('\n');
+                        let parsed;
+                        try {
+                            parsed = JSON.parse(jsonWithoutComments);
+                        } catch (e) {
+                            const cleaned = jsonString.replace(/\/\/.*$/gm, '');
+                            parsed = JSON.parse(cleaned);
+                        }
+
+                        const formatted = JSON.stringify(parsed, null, 2);
+                        const formattedLines = formatted.split('\n');
+
+                        if (commentMap.length > 0) {
+                            for (const commentInfo of commentMap) {
+                                const { line, comment, content } = commentInfo;
+
+                                const fieldMatch = content.match(/"([^"]+)":/);
+                                if (fieldMatch) {
+                                    const fieldName = fieldMatch[1];
+                                    for (let i = 0; i < formattedLines.length; i++) {
+                                        if (formattedLines[i].includes(`"${fieldName}":`)) {
+                                            formattedLines[i] = formattedLines[i].replace(/,\s*$/, '') + ' ' + comment;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        return formattedLines.join('\n');
+                    };
+
+                    const formatted = formatJsonWithComments(jsonValue);
 
                     if (jsonEditorInstance.current) {
                         jsonEditorInstance.current.setValue(formatted);
                     }
                     setJsonText(formatted);
                     setError("");
-                    setGenerationInfo(null); // 重置时不显示汇总信息
+                    setGenerationInfo(null);
                 } catch (err) {
                     setError(`格式化错误: ${err.message}`);
                 }
@@ -1211,7 +1495,7 @@
                     }
                     setJsonText(minified);
                     setError("");
-                    setGenerationInfo(null); // 重置时不显示汇总信息
+                    setGenerationInfo(null);
                 } catch (err) {
                     setError(`压缩错误: ${err.message}`);
                 }
@@ -1227,7 +1511,7 @@
                     }
                     setJsonText(escaped);
                     setError("");
-                    setGenerationInfo(null); // 重置时不显示汇总信息
+                    setGenerationInfo(null);
                 } catch (err) {
                     setError(`转义错误: ${err.message}`);
                 }
@@ -1243,23 +1527,58 @@
                     }
                     setJsonText(unescaped);
                     setError("");
-                    setGenerationInfo(null); // 重置时不显示汇总信息
+                    setGenerationInfo(null);
                 } catch (err) {
                     setError(`去转义错误: ${err.message}`);
                 }
             };
 
+            // 改进的移除注释函数
             const removeComments = () => {
                 try {
                     const jsonValue = jsonEditorInstance.current?.getValue() || jsonText;
-                    const cleaned = cleanJson(jsonValue);
+
+                    const removeJsonComments = (jsonString) => {
+                        const lines = jsonString.split('\n');
+                        const resultLines = [];
+
+                        lines.forEach(line => {
+                            let inString = false;
+                            let escaped = false;
+                            let cleanLine = '';
+
+                            for (let i = 0; i < line.length; i++) {
+                                const char = line[i];
+                                const nextChar = i + 1 < line.length ? line[i + 1] : '';
+
+                                if (!escaped && char === '\\') {
+                                    escaped = true;
+                                    cleanLine += char;
+                                } else if (!escaped && char === '"') {
+                                    inString = !inString;
+                                    cleanLine += char;
+                                } else if (!inString && char === '/' && nextChar === '/') {
+                                    break;
+                                } else {
+                                    cleanLine += char;
+                                    escaped = false;
+                                }
+                            }
+
+                            resultLines.push(cleanLine);
+                        });
+
+                        return resultLines.join('\n');
+                    };
+
+                    const cleaned = removeJsonComments(jsonValue);
 
                     if (jsonEditorInstance.current) {
                         jsonEditorInstance.current.setValue(cleaned);
                     }
                     setJsonText(cleaned);
                     setError("");
-                    setGenerationInfo(null); // 重置时不显示汇总信息
+                    setGenerationInfo(null);
                 } catch (err) {
                     setError(`移除注释错误: ${err.message}`);
                 }
@@ -1271,7 +1590,7 @@
                 }
                 setJsonText(DEFAULT_JSON);
                 setError("");
-                setGenerationInfo(null); // 重置时不显示汇总信息
+                setGenerationInfo(null);
             };
 
             const loadComplexJson = () => {
@@ -1280,7 +1599,7 @@
                 }
                 setJsonText(COMPLEX_JSON);
                 setError("");
-                setGenerationInfo(null); // 重置时不显示汇总信息
+                setGenerationInfo(null);
             };
 
             // 复制代码到剪贴板
@@ -1319,13 +1638,50 @@
                 }));
             };
 
-            // 切换代码生成模式
+            // 修复的toggleCodeGenMode函数
             const toggleCodeGenMode = () => {
-                setIsCodeGenMode(!isCodeGenMode);
+                const newMode = !isCodeGenMode;
+                setIsCodeGenMode(newMode);
+
+                // 当重新打开代码生成模式时，确保代码编辑器内容是最新的
+                if (newMode && generatedCode && codeEditorInstance.current) {
+                    // 给DOM一些时间来渲染
+                    setTimeout(() => {
+                        const model = codeEditorInstance.current.getModel();
+                        if (model && model.getValue() !== generatedCode) {
+                            codeEditorInstance.current.pushUndoStop();
+                            model.setValue(generatedCode);
+
+                            // 强制重新布局
+                            requestAnimationFrame(() => {
+                                if (codeEditorInstance.current) {
+                                    codeEditorInstance.current.layout();
+                                }
+                            });
+                        }
+                    }, 50);
+                }
             };
 
+            // 监听 generatedCode 变化，确保代码编辑器同步更新
+            useEffect(() => {
+                if (codeEditorInstance.current && generatedCode && isCodeGenMode) {
+                    const model = codeEditorInstance.current.getModel();
+                    if (model && model.getValue() !== generatedCode) {
+                        codeEditorInstance.current.pushUndoStop();
+                        model.setValue(generatedCode);
+
+                        // 延迟布局更新，确保DOM已渲染
+                        setTimeout(() => {
+                            if (codeEditorInstance.current) {
+                                codeEditorInstance.current.layout();
+                            }
+                        }, 10);
+                    }
+                }
+            }, [generatedCode, isCodeGenMode]);
+
             return React.createElement("div", { className: "app-container" },
-                // 头部
                 React.createElement("div", { className: "header" },
                     React.createElement("h1", null,
                         React.createElement("i", { className: "fas fa-code" }),
@@ -1336,207 +1692,84 @@
                     )
                 ),
 
-                // 配置面板
                 React.createElement("div", { className: "config-panel" },
                     React.createElement("div", { className: "config-content" },
-                        // 第一行配置
-                        React.createElement("div", { className: "config-row" },
-                            // 代码生成开关
-                            React.createElement("div", { className: "config-group" },
-                                React.createElement("label", null, "代码生成模式"),
-                                React.createElement("div", { className: "switch-container" },
-                                    React.createElement("label", { className: "switch" },
-                                        React.createElement("input", {
-                                            type: "checkbox",
-                                            checked: isCodeGenMode,
-                                            onChange: toggleCodeGenMode
-                                        }),
-                                        React.createElement("span", { className: "slider" })
-                                    ),
-                                    React.createElement("span", { className: "switch-label" },
-                                        isCodeGenMode ? "开启" : "关闭"
-                                    )
+                        React.createElement("div", { className: "action-buttons compact-actions" },
+                            React.createElement("div", { className: "mode-switch-inline" },
+                                React.createElement("label", { className: "switch" },
+                                    React.createElement("input", {
+                                        type: "checkbox",
+                                        checked: isCodeGenMode,
+                                        onChange: toggleCodeGenMode
+                                    }),
+                                    React.createElement("span", { className: "slider" })
+                                ),
+                                React.createElement("span", { className: "switch-label" },
+                                    "代码生成"
                                 )
                             ),
 
-                            // 语言选择
-                            isCodeGenMode && React.createElement("div", { className: "config-group" },
-                                React.createElement("label", { htmlFor: "language-select" }, "目标语言"),
-                                React.createElement("div", { className: "language-select" },
-                                    React.createElement("select", {
-                                            id: "language-select",
-                                            value: lang,
-                                            onChange: (e) => setLang(e.target.value)
-                                        },
-                                        Object.entries(LANGUAGE_CONFIG).map(([value, config]) =>
-                                            React.createElement("option", { key: value, value: value },
-                                                `${config.icon} ${config.name}`
-                                            )
-                                        )
-                                    )
-                                )
-                            ),
-
-                            // 结构体名称
-                            isCodeGenMode && React.createElement("div", { className: "config-group" },
-                                React.createElement("label", { htmlFor: "struct-name" }, "结构体名称"),
-                                React.createElement("input", {
-                                    id: "struct-name",
-                                    type: "text",
-                                    value: structName,
-                                    onChange: (e) => setStructName(e.target.value),
-                                    style: {
-                                        background: "#1e293b",
-                                        color: "#f1f5f9",
-                                        border: "1px solid #475569",
-                                        padding: "10px 12px",
-                                        borderRadius: "8px",
-                                        fontSize: "14px",
-                                        width: "140px"
-                                    }
-                                })
-                            ),
-
-                            // 命名格式
-                            isCodeGenMode && React.createElement("div", { className: "config-group" },
-                                React.createElement("label", { htmlFor: "case-format" }, "命名格式"),
-                                React.createElement("select", {
-                                        id: "case-format",
-                                        className: "format-select case-format-select",
-                                        value: caseFormat,
-                                        onChange: (e) => setCaseFormat(e.target.value)
-                                    },
-                                    Object.entries(CASE_FORMATS).map(([value, config]) =>
-                                        React.createElement("option", { key: value, value: value },
-                                            config.name
-                                        )
-                                    )
-                                )
-                            ),
-
-                            // 通用选项
-                            isCodeGenMode && React.createElement("div", { className: "config-group" },
-                                React.createElement("label", null, "选项"),
-                                React.createElement("div", { className: "checkbox-options" },
-                                    React.createElement("div", { className: "checkbox-item" },
-                                        React.createElement("input", {
-                                            type: "checkbox",
-                                            id: "inline-struct",
-                                            checked: inlineStruct,
-                                            onChange: (e) => setInlineStruct(e.target.checked)
-                                        }),
-                                        React.createElement("label", { htmlFor: "inline-struct" }, "内联结构体")
-                                    ),
-                                    React.createElement("div", { className: "checkbox-item" },
-                                        React.createElement("input", {
-                                            type: "checkbox",
-                                            id: "detect-time",
-                                            checked: detectTime,
-                                            onChange: (e) => setDetectTime(e.target.checked)
-                                        }),
-                                        React.createElement("label", { htmlFor: "detect-time" },
-                                            "检测时间类型",
-                                            detectTime && timeFieldsDetected > 0 &&
-                                            React.createElement("span", { className: "time-type-hint" },
-                                                `检测到 ${timeFieldsDetected} 个时间字段`
-                                            )
-                                        )
-                                    ),
-                                    React.createElement("div", { className: "checkbox-item" },
-                                        React.createElement("input", {
-                                            type: "checkbox",
-                                            id: "include-comments",
-                                            checked: includeComments,
-                                            onChange: (e) => setIncludeComments(e.target.checked)
-                                        }),
-                                        React.createElement("label", { htmlFor: "include-comments" }, "包含注释")
-                                    ),
-                                    React.createElement("div", { className: "checkbox-item" },
-                                        React.createElement("input", {
-                                            type: "checkbox",
-                                            id: "merge-array-fields",
-                                            checked: mergeArrayFields,
-                                            onChange: (e) => setMergeArrayFields(e.target.checked)
-                                        }),
-                                        React.createElement("label", { htmlFor: "merge-array-fields" }, "合并数组字段")
-                                    )
-                                )
-                            ),
-
-                            // Go标签选项
-                            isCodeGenMode && lang === "go" && React.createElement("div", { className: "config-group" },
-                                React.createElement("label", null, "Go标签"),
-                                React.createElement("div", { className: "go-tags-container" },
-                                    Object.entries(goTags).map(([tag, checked]) =>
-                                        React.createElement("div", { className: "tag-checkbox", key: tag },
-                                            React.createElement("input", {
-                                                type: "checkbox",
-                                                id: `tag-${tag}`,
-                                                checked: checked,
-                                                onChange: (e) => updateGoTag(tag, e.target.checked)
-                                            }),
-                                            React.createElement("label", { htmlFor: `tag-${tag}` }, tag)
-                                        )
-                                    )
-                                )
-                            )
-                        ),
-
-                        // 操作按钮
-                        React.createElement("div", { className: "action-buttons" },
                             React.createElement("button", {
-                                    className: "btn btn-secondary",
-                                    onClick: formatJson
+                                    className: "btn btn-secondary btn-compact",
+                                    onClick: formatJson,
+                                    title: "格式化JSON（保留注释）"
                                 },
                                 React.createElement("i", { className: "fas fa-indent" }),
                                 "格式化"
                             ),
                             React.createElement("button", {
-                                    className: "btn btn-secondary",
-                                    onClick: removeComments
+                                    className: "btn btn-secondary btn-compact",
+                                    onClick: removeComments,
+                                    title: "移除注释"
                                 },
                                 React.createElement("i", { className: "fas fa-comment-slash" }),
                                 "去注释"
                             ),
                             React.createElement("button", {
-                                    className: "btn btn-secondary",
-                                    onClick: minifyJson
+                                    className: "btn btn-secondary btn-compact",
+                                    onClick: minifyJson,
+                                    title: "压缩JSON"
                                 },
                                 React.createElement("i", { className: "fas fa-compress" }),
                                 "压缩"
                             ),
                             React.createElement("button", {
-                                    className: "btn btn-secondary",
-                                    onClick: escapeJson
+                                    className: "btn btn-secondary btn-compact",
+                                    onClick: escapeJson,
+                                    title: "转义JSON"
                                 },
                                 React.createElement("i", { className: "fas fa-code" }),
                                 "转义"
                             ),
                             React.createElement("button", {
-                                    className: "btn btn-secondary",
-                                    onClick: unescapeJson
+                                    className: "btn btn-secondary btn-compact",
+                                    onClick: unescapeJson,
+                                    title: "去转义JSON"
                                 },
                                 React.createElement("i", { className: "fas fa-code" }),
                                 "去转义"
                             ),
                             React.createElement("button", {
-                                    className: "btn btn-secondary",
-                                    onClick: resetJson
+                                    className: "btn btn-secondary btn-compact",
+                                    onClick: resetJson,
+                                    title: "重置为默认JSON"
                                 },
                                 React.createElement("i", { className: "fas fa-redo" }),
                                 "重置"
                             ),
                             React.createElement("button", {
-                                    className: "btn btn-secondary",
-                                    onClick: loadComplexJson
+                                    className: "btn btn-secondary btn-compact",
+                                    onClick: loadComplexJson,
+                                    title: "加载复杂JSON示例"
                                 },
                                 React.createElement("i", { className: "fas fa-cogs" }),
                                 "复杂示例"
                             ),
                             isCodeGenMode && React.createElement("button", {
-                                    className: "btn btn-primary",
+                                    className: "btn btn-primary btn-compact",
                                     onClick: generateCode,
-                                    disabled: isGenerating
+                                    disabled: isGenerating,
+                                    title: "生成代码"
                                 },
                                 isGenerating
                                     ? React.createElement(React.Fragment, null,
@@ -1548,17 +1781,136 @@
                                         "生成代码"
                                     )
                             )
+                        ),
+
+                        isCodeGenMode && React.createElement("div", { className: "config-row code-gen-config" },
+                            React.createElement("div", { className: "config-group compact-group" },
+                                React.createElement("label", { htmlFor: "language-select" }, "目标语言"),
+                                React.createElement("div", { className: "language-select" },
+                                    React.createElement("select", {
+                                            id: "language-select",
+                                            value: lang,
+                                            onChange: (e) => setLang(e.target.value),
+                                            className: "compact-select"
+                                        },
+                                        Object.entries(LANGUAGE_CONFIG).map(([value, config]) =>
+                                            React.createElement("option", { key: value, value: value },
+                                                `${config.icon} ${config.name}`
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+
+                            React.createElement("div", { className: "config-group compact-group" },
+                                React.createElement("label", { htmlFor: "struct-name" }, "结构体名"),
+                                React.createElement("input", {
+                                    id: "struct-name",
+                                    type: "text",
+                                    value: structName,
+                                    onChange: (e) => setStructName(e.target.value),
+                                    className: "compact-input"
+                                })
+                            ),
+
+                            React.createElement("div", { className: "config-group compact-group" },
+                                React.createElement("label", { htmlFor: "case-format" }, "命名格式"),
+                                React.createElement("select", {
+                                        id: "case-format",
+                                        className: "format-select case-format-select compact-select",
+                                        value: caseFormat,
+                                        onChange: (e) => setCaseFormat(e.target.value)
+                                    },
+                                    Object.entries(CASE_FORMATS).map(([value, config]) =>
+                                        React.createElement("option", { key: value, value: value },
+                                            config.name
+                                        )
+                                    )
+                                )
+                            ),
+
+                            React.createElement("div", { className: "config-group compact-group" },
+                                React.createElement("label", null, "选项"),
+                                React.createElement("div", { className: "checkbox-options compact-options" },
+                                    React.createElement("div", { className: "checkbox-item compact-item" },
+                                        React.createElement("input", {
+                                            type: "checkbox",
+                                            id: "inline-struct",
+                                            checked: inlineStruct,
+                                            onChange: (e) => setInlineStruct(e.target.checked)
+                                        }),
+                                        React.createElement("label", {
+                                            htmlFor: "inline-struct",
+                                            title: "内联结构体"
+                                        }, "内联")
+                                    ),
+                                    React.createElement("div", { className: "checkbox-item compact-item" },
+                                        React.createElement("input", {
+                                            type: "checkbox",
+                                            id: "detect-time",
+                                            checked: detectTime,
+                                            onChange: (e) => setDetectTime(e.target.checked)
+                                        }),
+                                        React.createElement("label", {
+                                            htmlFor: "detect-time",
+                                            title: "检测时间类型"
+                                        }, "时间")
+                                    ),
+                                    React.createElement("div", { className: "checkbox-item compact-item" },
+                                        React.createElement("input", {
+                                            type: "checkbox",
+                                            id: "include-comments",
+                                            checked: includeComments,
+                                            onChange: (e) => setIncludeComments(e.target.checked)
+                                        }),
+                                        React.createElement("label", {
+                                            htmlFor: "include-comments",
+                                            title: "包含注释"
+                                        }, "注释")
+                                    ),
+                                    React.createElement("div", { className: "checkbox-item compact-item" },
+                                        React.createElement("input", {
+                                            type: "checkbox",
+                                            id: "merge-array-fields",
+                                            checked: mergeArrayFields,
+                                            onChange: (e) => setMergeArrayFields(e.target.checked)
+                                        }),
+                                        React.createElement("label", {
+                                            htmlFor: "merge-array-fields",
+                                            title: "合并数组字段"
+                                        }, "合并数组")
+                                    )
+                                )
+                            ),
+
+                            lang === "go" && React.createElement("div", { className: "config-group compact-group" },
+                                React.createElement("label", null, "Go标签"),
+                                React.createElement("div", { className: "go-tags-container compact-tags" },
+                                    Object.entries(goTags).map(([tag, checked]) =>
+                                        React.createElement("div", { className: "tag-checkbox compact-tag", key: tag },
+                                            React.createElement("input", {
+                                                type: "checkbox",
+                                                id: `tag-${tag}`,
+                                                checked: checked,
+                                                onChange: (e) => updateGoTag(tag, e.target.checked)
+                                            }),
+                                            React.createElement("label", {
+                                                htmlFor: `tag-${tag}`,
+                                                title: tag
+                                            }, tag === "omitempty" ? "omit" : tag)
+                                        )
+                                    )
+                                )
+                            )
                         )
                     ),
 
-                    // 错误信息
                     error && React.createElement("div", { className: "error-message" },
                         React.createElement("i", { className: "fas fa-exclamation-triangle" }),
                         error
                     ),
 
-                    // 生成信息（只在生成代码后显示）
-                    generationInfo && React.createElement("div", { className: "generation-info" },
+                    isCodeGenMode && generationInfo && React.createElement("div", { className: "generation-info" },
                         React.createElement("div", { className: "generation-info-compact" },
                             React.createElement("div", { className: "generation-info-group" },
                                 React.createElement("div", { className: "generation-info-stat" },
@@ -1589,8 +1941,7 @@
                         )
                     ),
 
-                    // 警告信息
-                    generationInfo && generationInfo.warnings.length > 0 &&
+                    isCodeGenMode && generationInfo && generationInfo.warnings.length > 0 &&
                     React.createElement("div", { className: "warning-message" },
                         React.createElement("i", { className: "fas fa-exclamation-triangle" }),
                         React.createElement("div", null,
@@ -1601,12 +1952,10 @@
                     )
                 ),
 
-                // 编辑器面板
                 React.createElement("div", { className: "editor-panels" },
-                    // JSON编辑器
-                    React.createElement("div", { 
-                        className: `panel ${isCodeGenMode ? 'json-panel partial-width' : 'json-panel full-width'}` 
-                    },
+                    React.createElement("div", {
+                            className: `panel ${isCodeGenMode ? 'json-panel partial-width' : 'json-panel full-width'}`
+                        },
                         React.createElement("div", { className: "panel-header" },
                             React.createElement("div", { className: "panel-title" },
                                 React.createElement("i", { className: "fas fa-code" }),
@@ -1628,15 +1977,17 @@
                         })
                     ),
 
-                    // 代码输出
-                    isCodeGenMode && React.createElement("div", { className: "panel code-panel" },
+                    // 修复：始终渲染代码面板，用CSS控制显示
+                    React.createElement("div", {
+                            className: `panel code-panel ${isCodeGenMode ? '' : 'hidden'}`
+                        },
                         React.createElement("div", { className: "panel-header" },
                             React.createElement("div", { className: "panel-title" },
                                 React.createElement("i", { className: "fas fa-file-code" }),
                                 `${LANGUAGE_CONFIG[lang].name} 代码`
                             ),
                             React.createElement("div", { className: "panel-stats" },
-                                generatedCode
+                                generatedCode && isCodeGenMode
                                     ? `${codeStats.lines} 行, ${codeStats.chars} 字符`
                                     : "等待生成代码"
                             )
@@ -1648,7 +1999,6 @@
                     )
                 ),
 
-                // 状态栏
                 isCodeGenMode && React.createElement("div", { className: "status-bar" },
                     React.createElement("div", { className: "status-item" },
                         React.createElement("div", { className: "language-badge" },
@@ -1657,8 +2007,8 @@
                         ),
                         React.createElement("span", {
                                 style: {
-                                    marginLeft: "8px",
-                                    fontSize: "12px",
+                                    marginLeft: "6px",
+                                    fontSize: "11px",
                                     color: inlineStruct ? "#86efac" : "#fbbf24"
                                 }
                             },
@@ -1666,8 +2016,8 @@
                         ),
                         React.createElement("span", {
                                 style: {
-                                    marginLeft: "8px",
-                                    fontSize: "12px",
+                                    marginLeft: "6px",
+                                    fontSize: "11px",
                                     color: includeComments ? "#86efac" : "#94a3b8"
                                 }
                             },
@@ -1676,12 +2026,22 @@
                         detectTime && timeFieldsDetected > 0 &&
                         React.createElement("span", {
                                 style: {
-                                    marginLeft: "8px",
-                                    fontSize: "12px",
+                                    marginLeft: "6px",
+                                    fontSize: "11px",
                                     color: "#60a5fa"
                                 }
                             },
                             `时间字段: ${timeFieldsDetected}`
+                        ),
+                        mergeArrayFields &&
+                        React.createElement("span", {
+                                style: {
+                                    marginLeft: "6px",
+                                    fontSize: "11px",
+                                    color: "#fbbf24"
+                                }
+                            },
+                            "合并数组"
                         )
                     ),
                     React.createElement("div", { className: "status-item" },
@@ -1712,17 +2072,15 @@
             );
         }
 
-        // 判断是否为时间字符串
+        // 以下辅助函数保持不变
         function isTimeString(value) {
             return TIME_PATTERNS.some(pattern => pattern.test(value));
         }
 
-        // 判断字段名是否为时间字段
         function isTimeFieldName(fieldName) {
             return /(time|date|timestamp|created|updated|start|end|at)$/i.test(fieldName);
         }
 
-        // 判断是否为时间字段（值和名称都检查）
         function isTimeField(key, value) {
             if (typeof value === 'string' && isTimeString(value)) {
                 return true;
@@ -1733,7 +2091,6 @@
             return false;
         }
 
-        // 获取时间类型（根据语言）
         function getTimeType(lang) {
             switch(lang) {
                 case 'go': return 'time.Time';
@@ -1746,23 +2103,15 @@
             }
         }
 
-        // 格式化字段名
         function formatFieldName(name, format, lang, isStructName = false) {
             if (!name || name.trim() === '') return name;
-            
-            // 特殊字符处理：移除特殊字符，保留字母数字和下划线
+
             let cleaned = name.replace(/[^a-zA-Z0-9_\u4e00-\u9fa5]/g, '_');
-            
-            // 处理中文：转换为拼音或保留
             const hasChinese = /[\u4e00-\u9fa5]/.test(cleaned);
             if (hasChinese) {
-                // 简单的中文处理：在中文前加下划线或移除
-                cleaned = cleaned.replace(/[\u4e00-\u9fa5]+/g, (match) => {
-                    // 这里可以添加拼音转换逻辑
-                    return 'field';
-                });
+                cleaned = cleaned.replace(/[\u4e00-\u9fa5]+/g, (match) => 'field');
             }
-            
+
             let formatted;
             if (CASE_FORMATS[format]) {
                 formatted = CASE_FORMATS[format].fn(cleaned);
@@ -1770,12 +2119,10 @@
                 formatted = cleaned;
             }
 
-            // 对于Go语言的结构体名，确保首字母大写
             if (lang === 'go' && isStructName) {
                 formatted = formatted.charAt(0).toUpperCase() + formatted.slice(1);
             }
-            
-            // 确保不以数字开头
+
             if (/^\d/.test(formatted)) {
                 formatted = 'field' + formatted;
             }
@@ -1783,9 +2130,8 @@
             return formatted;
         }
 
-        // 代码生成函数
         function generateCodeFromObject(obj, lang, structName, goTags, inlineStruct, detectTime, comments, caseFormat) {
-            const formatName = (name, isStructName = false) => 
+            const formatName = (name, isStructName = false) =>
                 formatFieldName(name, caseFormat, lang, isStructName);
 
             if (lang === "go") return genGo(obj, formatName(structName, true), goTags, inlineStruct, detectTime, comments, formatName);
@@ -1797,9 +2143,7 @@
             return `// 不支持的语言: ${lang}`;
         }
 
-        // 增强的类型推断辅助函数
         function inferType(value, lang, key = '', detectTime = false, parentPath = '') {
-            // 检查是否为时间字段
             if (detectTime && isTimeField(key, value)) {
                 return getTimeType(lang);
             }
@@ -1814,7 +2158,6 @@
 
             if (Array.isArray(value)) {
                 if (value.length === 0) {
-                    // 空数组
                     if (lang === "go") return "[]interface{}";
                     if (lang === "typescript") return "any[]";
                     if (lang === "java") return "List<Object>";
@@ -1823,17 +2166,16 @@
                     if (lang === "python") return "List[Any]";
                 }
 
-                // 检查数组元素类型是否一致
                 const firstItem = value[0];
                 let allSameType = true;
-                
+
                 for (let i = 1; i < Math.min(value.length, 5); i++) {
                     if (typeof value[i] !== typeof firstItem) {
                         allSameType = false;
                         break;
                     }
                 }
-                
+
                 if (allSameType) {
                     const itemType = inferType(firstItem, lang, key, detectTime, parentPath + '.' + key);
                     if (lang === "go") return `[]${itemType}`;
@@ -1843,7 +2185,6 @@
                     if (lang === "rust") return `Vec<${itemType}>`;
                     if (lang === "python") return `List[${itemType}]`;
                 } else {
-                    // 混合类型数组
                     if (lang === "go") return "[]interface{}";
                     if (lang === "typescript") return "any[]";
                     if (lang === "java") return "List<Object>";
@@ -1854,9 +2195,7 @@
             }
 
             if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-                // 对象类型
                 if (Object.keys(value).length === 0) {
-                    // 空对象
                     if (lang === "go") return "map[string]interface{}";
                     if (lang === "typescript") return "Record<string, any>";
                     if (lang === "java") return "Map<String, Object>";
@@ -1876,7 +2215,6 @@
             switch (typeof value) {
                 case "number":
                     if (Number.isInteger(value)) {
-                        // 大整数检查
                         if (value > 2147483647 || value < -2147483648) {
                             if (lang === "go") return "int64";
                             if (lang === "java") return "Long";
@@ -1925,18 +2263,14 @@
             let allStructs = {};
             let mainStructCode = "";
 
-            // 生成主结构体
             mainStructCode = genGoStruct(obj, name, tags, inlineStruct, detectTime, allStructs, 0, comments, formatName);
 
-            // 构建完整代码
             let code = "";
 
-            // 添加注释
             if (comments && comments.fieldComments[name]) {
                 code += `// ${comments.fieldComments[name]}\n`;
             }
 
-            // 如果需要导入time包
             let hasTimeField = false;
             const checkTimeField = (obj) => {
                 for (const [key, value] of Object.entries(obj)) {
@@ -1957,7 +2291,6 @@
                 code = "import \"time\"\n\n" + code;
             }
 
-            // 如果使用拆分模式且有嵌套结构体，先输出嵌套结构体
             if (!inlineStruct) {
                 for (const [structName, structCode] of Object.entries(allStructs)) {
                     if (structName !== name) {
@@ -1966,15 +2299,12 @@
                 }
             }
 
-            // 添加主结构体
             code += mainStructCode;
 
             return code;
         }
 
-        // 递归生成Go结构体 - 处理复杂嵌套
         function genGoStruct(obj, name, tags, inlineStruct, detectTime, allStructs = {}, depth = 0, comments, formatName, path = '') {
-            // 防止无限递归
             if (depth > 20) {
                 return `type ${name} struct {\n  // 嵌套深度过大，建议简化JSON结构\n  Data map[string]interface{} \`json:"data"\`\n}`;
             }
@@ -1986,13 +2316,11 @@
                 const currentPath = path ? `${path}.${key}` : key;
                 let fieldType = inferType(value, "go", key, detectTime, currentPath);
 
-                // 添加字段注释
                 const comment = comments ? comments.fieldComments[key] : null;
                 if (comment) {
                     code += `  // ${comment}\n`;
                 }
 
-                // 构建标签
                 let tagParts = [];
                 if (tags.json) {
                     tagParts.push(`json:"${key}${tags.omitempty ? ",omitempty" : ""}"`);
@@ -2023,69 +2351,53 @@
 
                 const tagStr = tagParts.length > 0 ? ` \`${tagParts.join(" ")}\`` : "";
 
-                // 处理嵌套对象
                 if (typeof value === "object" && value !== null && !Array.isArray(value)) {
                     const nestedStructName = formatName(key, true);
-                    
+
                     if (Object.keys(value).length === 0) {
-                        // 空对象，使用map
                         code += `  ${fieldName} map[string]interface{}${tagStr}\n`;
                     } else if (inlineStruct) {
-                        // 内联模式：生成嵌套结构体
                         code += `  ${fieldName} ${genGoInlineStruct(value, nestedStructName, tags, detectTime, depth + 1, comments, formatName, currentPath)}${tagStr}\n`;
                     } else {
-                        // 拆分模式：引用独立结构体
                         code += `  ${fieldName} ${nestedStructName}${tagStr}\n`;
 
-                        // 如果还没有生成这个嵌套结构体，先生成
                         if (!allStructs[nestedStructName]) {
                             allStructs[nestedStructName] = genGoStruct(value, nestedStructName, tags, inlineStruct, detectTime, allStructs, depth + 1, comments, formatName, currentPath);
                         }
                     }
                 }
-                // 处理数组
                 else if (Array.isArray(value)) {
                     if (value.length === 0) {
-                        // 空数组
                         code += `  ${fieldName} []interface{}${tagStr}\n`;
                     } else {
                         const firstItem = value[0];
-                        
-                        // 处理多维数组
+
                         if (Array.isArray(firstItem)) {
-                            // 二维数组
                             code += `  ${fieldName} [][]interface{}${tagStr}\n`;
                         } else if (typeof firstItem === "object" && firstItem !== null) {
-                            // 对象数组
                             const itemTypeName = formatName(key.endsWith('s') ? key.slice(0, -1) : key + 'Item', true);
-                            
+
                             if (inlineStruct) {
-                                // 内联模式：生成嵌套结构体
                                 code += `  ${fieldName} []${genGoInlineStruct(firstItem, itemTypeName, tags, detectTime, depth + 1, comments, formatName, currentPath)}${tagStr}\n`;
                             } else {
-                                // 拆分模式：引用独立结构体
                                 code += `  ${fieldName} []${itemTypeName}${tagStr}\n`;
 
-                                // 如果还没有生成这个嵌套结构体，先生成
                                 if (!allStructs[itemTypeName]) {
                                     allStructs[itemTypeName] = genGoStruct(firstItem, itemTypeName, tags, inlineStruct, detectTime, allStructs, depth + 1, comments, formatName, currentPath);
                                 }
                             }
                         } else {
-                            // 基本类型数组
                             const itemType = inferType(firstItem, "go", key, detectTime, currentPath);
                             code += `  ${fieldName} []${itemType}${tagStr}\n`;
                         }
                     }
                 } else {
-                    // 基本类型
                     code += `  ${fieldName} ${fieldType}${tagStr}\n`;
                 }
             }
 
             code += "}";
 
-            // 保存到所有结构体集合中
             if (!allStructs[name]) {
                 allStructs[name] = code;
             }
@@ -2093,7 +2405,6 @@
             return code;
         }
 
-        // 生成内联的Go结构体（用于内联模式）
         function genGoInlineStruct(obj, name, tags, detectTime, depth, comments, formatName, path) {
             let indent = "  ".repeat(depth);
             let code = `${indent}struct {\n`;
@@ -2104,12 +2415,10 @@
                 let fieldType = inferType(value, "go", key, detectTime, currentPath);
                 const comment = comments ? comments.fieldComments[key] : null;
 
-                // 添加字段注释
                 if (comment) {
                     code += `${indent}  // ${comment}\n`;
                 }
 
-                // 构建标签
                 let tagParts = [];
                 if (tags.json) {
                     tagParts.push(`json:"${key}${tags.omitempty ? ",omitempty" : ""}"`);
@@ -2120,12 +2429,10 @@
 
                 const tagStr = tagParts.length > 0 ? ` \`${tagParts.join(" ")}\`` : "";
 
-                // 处理嵌套对象（递归内联）
                 if (typeof value === "object" && value !== null && !Array.isArray(value)) {
                     const nestedStructName = formatName(key, true);
                     code += `${indent}  ${fieldName} ${genGoInlineStruct(value, nestedStructName, tags, detectTime, depth + 1, comments, formatName, currentPath)}${tagStr}\n`;
                 } else if (Array.isArray(value) && value.length > 0 && typeof value[0] === "object") {
-                    // 对象数组
                     const itemTypeName = formatName(key.endsWith('s') ? key.slice(0, -1) : key + 'Item', true);
                     code += `${indent}  ${fieldName} []${itemTypeName}${tagStr}\n`;
                 } else {
@@ -2137,7 +2444,6 @@
             return code;
         }
 
-        // 生成其他语言代码的函数（已简化，实际项目中需要完整实现）
         function genTypeScript(obj, name, inlineStruct, detectTime, comments, formatName) {
             return generateGenericCode(obj, name, "typescript", inlineStruct, detectTime, comments, formatName);
         }
@@ -2158,14 +2464,13 @@
             return generateGenericCode(obj, name, "rust", inlineStruct, detectTime, comments, formatName);
         }
 
-        // 通用代码生成函数
         function generateGenericCode(obj, name, lang, inlineStruct, detectTime, comments, formatName, depth = 0, path = '') {
             if (depth > 10) {
                 return `// 结构嵌套过深，建议简化JSON\n// ${name} 类型定义`;
             }
 
             let code = '';
-            
+
             switch(lang) {
                 case 'typescript':
                     code = `interface ${name} {\n`;
@@ -2185,14 +2490,13 @@
             }
 
             const indent = lang === 'python' ? '    ' : '  ';
-            
+
             for (const [key, value] of Object.entries(obj)) {
                 const fieldName = formatName(key, false);
                 const currentPath = path ? `${path}.${key}` : key;
                 const fieldType = inferType(value, lang, key, detectTime, currentPath);
                 const comment = comments ? comments.fieldComments[key] : null;
 
-                // 添加注释
                 if (comment) {
                     switch(lang) {
                         case 'typescript':
@@ -2207,7 +2511,6 @@
                     }
                 }
 
-                // 生成字段定义
                 switch(lang) {
                     case 'typescript':
                         code += `${indent}${fieldName}: ${fieldType};\n`;
@@ -2235,13 +2538,12 @@
                     code += '}';
                     break;
                 case 'python':
-                    // Python class 不需要额外闭合
                     break;
                 case 'kotlin':
-                    code = code.slice(0, -2) + '\n)'; // 移除最后的逗号
+                    code = code.slice(0, -2) + '\n)';
                     break;
                 case 'rust':
-                    code = code.slice(0, -2) + '\n}'; // 移除最后的逗号
+                    code = code.slice(0, -2) + '\n}';
                     break;
             }
 
