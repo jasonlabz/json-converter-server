@@ -856,20 +856,37 @@
   ]
 }`;
 
-        // 复杂JSON示例
+        // 测试JSON：多维数组下嵌套不同结构体的合并逻辑
         const COMPLEX_JSON = `{
-  // 测试URL包含//的情况
+  "地址": "",
   "doc_url": "http://localhost",
-  "another_url": "https://example.com//path",
-  // 混合结构数组
-  "mixed_array": [
-    {
-      "a3": "123"
-    },
-    {
-      "b3": "",
-      "c3": "extra"
-    }
+  "docUrl": "http://localhost",
+  "int1": 1,
+  "int2": 3000000000,
+  "float": 1.15,
+  "a": [
+    [
+      {
+        "a1": {
+          "a2": [
+            {"a3": "123"},
+            {"b3": ""}
+          ]
+        }
+      },
+      {
+        "a1": {
+          "a2": [
+            {"a3": 123},
+            {"c3": ""}
+          ],
+          "b2": ""
+        },
+        "b1": {
+          "b2": ""
+        }
+      }
+    ]
   ]
 }`;
 
@@ -909,13 +926,13 @@
             });
 
             const [structName, setStructName] = useState("Response");
-            const [inlineStruct, setInlineStruct] = useState(true);
+            const [inlineStruct, setInlineStruct] = useState(false); // 默认改为拆分模式，便于查看
             const [detectTime, setDetectTime] = useState(true);
             const [includeComments, setIncludeComments] = useState(true);
-            const [mergeArrayFields, setMergeArrayFields] = useState(false);
+            const [mergeArrayFields, setMergeArrayFields] = useState(true); // 默认开启合并
             const [caseFormat, setCaseFormat] = useState("pascal");
             const [isCodeGenMode, setIsCodeGenMode] = useState(true);
-            const [jsonText, setJsonText] = useState(DEFAULT_JSON);
+            const [jsonText, setJsonText] = useState(DEFAULT_JSON); // 使用DEFAULT_JSON
             const [generatedCode, setGeneratedCode] = useState("");
             const [error, setError] = useState("");
             const [isGenerating, setIsGenerating] = useState(false);
@@ -929,54 +946,76 @@
             const codeEditorRef = useRef(null);
             const codeEditorInstance = useRef(null);
 
-            // 数组合并工具函数
+            // 修复的数组合并工具函数（支持多维数组递归合并）
             const mergeArrayItems = useCallback((array) => {
                 if (!array || array.length <= 1) return array;
 
                 const firstItem = array[0];
-                if (!firstItem || typeof firstItem !== 'object' || Array.isArray(firstItem)) {
-                    return array;
+
+                // 处理多维数组：递归处理子数组
+                if (Array.isArray(firstItem)) {
+                    return array.map(subArray => mergeArrayItems(subArray));
                 }
 
-                const checkStructure = (item) => {
-                    if (!item || typeof item !== 'object' || Array.isArray(item)) {
-                        return null;
-                    }
-                    return Object.keys(item).sort();
-                };
+                // 处理对象数组
+                if (firstItem && typeof firstItem === 'object' && !Array.isArray(firstItem)) {
+                    // 检查结构是否相同
+                    const checkStructure = (item) => {
+                        if (!item || typeof item !== 'object' || Array.isArray(item)) {
+                            return null;
+                        }
+                        return Object.keys(item).sort();
+                    };
 
-                const firstKeys = checkStructure(firstItem);
-                if (!firstKeys) return array;
+                    const firstKeys = checkStructure(firstItem);
+                    if (!firstKeys) return array;
 
-                let allSameStructure = true;
-                for (let i = 1; i < array.length; i++) {
-                    const currentKeys = checkStructure(array[i]);
-                    if (!currentKeys || JSON.stringify(currentKeys) !== JSON.stringify(firstKeys)) {
-                        allSameStructure = false;
-                        break;
-                    }
-                }
-
-                if (allSameStructure) return array;
-
-                const allFields = new Set();
-                array.forEach(item => {
-                    if (item && typeof item === 'object' && !Array.isArray(item)) {
-                        Object.keys(item).forEach(key => allFields.add(key));
-                    }
-                });
-
-                return array.map(item => {
-                    if (!item || typeof item !== 'object' || Array.isArray(item)) {
-                        return item;
+                    // 检查所有对象是否结构相同
+                    let allSameStructure = true;
+                    for (let i = 1; i < array.length; i++) {
+                        const currentKeys = checkStructure(array[i]);
+                        if (!currentKeys || JSON.stringify(currentKeys) !== JSON.stringify(firstKeys)) {
+                            allSameStructure = false;
+                            break;
+                        }
                     }
 
-                    const mergedItem = {};
-                    allFields.forEach(field => {
-                        mergedItem[field] = item && item.hasOwnProperty(field) ? item[field] : '';
+                    if (allSameStructure) return array;
+
+                    // 合并所有字段
+                    const allFields = new Set();
+                    array.forEach(item => {
+                        if (item && typeof item === 'object' && !Array.isArray(item)) {
+                            Object.keys(item).forEach(key => allFields.add(key));
+                        }
                     });
-                    return mergedItem;
-                });
+
+                    return array.map(item => {
+                        if (!item || typeof item !== 'object' || Array.isArray(item)) {
+                            return item;
+                        }
+
+                        const mergedItem = {};
+                        allFields.forEach(field => {
+                            if (item && item.hasOwnProperty(field)) {
+                                // 递归处理嵌套的数组
+                                if (Array.isArray(item[field])) {
+                                    mergedItem[field] = mergeArrayItems(item[field]);
+                                } else if (item[field] && typeof item[field] === 'object') {
+                                    // 对于嵌套对象，如果也是数组结构则递归合并
+                                    mergedItem[field] = item[field];
+                                } else {
+                                    mergedItem[field] = item[field];
+                                }
+                            } else {
+                                mergedItem[field] = '';
+                            }
+                        });
+                        return mergedItem;
+                    });
+                }
+
+                return array;
             }, []);
 
             // 处理对象函数
@@ -988,9 +1027,11 @@
                         if (item.length > 0) {
                             const firstItem = item[0];
                             if (firstItem && typeof firstItem === 'object') {
+                                // 递归处理多维数组
                                 const processedArray = mergeArrayItems(item).map(process);
                                 return processedArray;
                             } else if (Array.isArray(firstItem)) {
+                                // 多维数组
                                 return item.map(subArray => {
                                     if (Array.isArray(subArray) && subArray.length > 0) {
                                         const subFirstItem = subArray[0];
@@ -1390,88 +1431,12 @@
                 }
             }, [lang, goTags, structName, inlineStruct, detectTime, jsonText, mergeArrayFields, detectTimeFields, includeComments, caseFormat, parseJsonWithComments, collectGenerationInfo, processObject]);
 
-            // 改进的JSON格式化函数
+            // JSON格式化函数
             const formatJson = () => {
                 try {
                     const jsonValue = jsonEditorInstance.current?.getValue() || jsonText;
-
-                    const formatJsonWithComments = (jsonString) => {
-                        const lines = jsonString.split('\n');
-                        const resultLines = [];
-                        let inString = false;
-                        let escaped = false;
-                        let currentLine = '';
-                        const commentMap = [];
-
-                        for (let i = 0; i < lines.length; i++) {
-                            const line = lines[i];
-                            let lineContent = '';
-                            let lineComment = '';
-                            inString = false;
-                            escaped = false;
-
-                            for (let j = 0; j < line.length; j++) {
-                                const char = line[j];
-                                const nextChar = j + 1 < line.length ? line[j + 1] : '';
-
-                                if (!escaped && char === '\\') {
-                                    escaped = true;
-                                    lineContent += char;
-                                } else if (!escaped && char === '"') {
-                                    inString = !inString;
-                                    lineContent += char;
-                                } else if (!inString && char === '/' && nextChar === '/') {
-                                    lineComment = line.substring(j);
-                                    break;
-                                } else {
-                                    lineContent += char;
-                                    escaped = false;
-                                }
-                            }
-
-                            if (lineComment) {
-                                commentMap.push({
-                                    line: i,
-                                    comment: lineComment.trim(),
-                                    content: lineContent.trim()
-                                });
-                            }
-                            resultLines.push(lineContent.trim());
-                        }
-
-                        const jsonWithoutComments = resultLines.join('\n');
-                        let parsed;
-                        try {
-                            parsed = JSON.parse(jsonWithoutComments);
-                        } catch (e) {
-                            const cleaned = jsonString.replace(/\/\/.*$/gm, '');
-                            parsed = JSON.parse(cleaned);
-                        }
-
-                        const formatted = JSON.stringify(parsed, null, 2);
-                        const formattedLines = formatted.split('\n');
-
-                        if (commentMap.length > 0) {
-                            for (const commentInfo of commentMap) {
-                                const { line, comment, content } = commentInfo;
-
-                                const fieldMatch = content.match(/"([^"]+)":/);
-                                if (fieldMatch) {
-                                    const fieldName = fieldMatch[1];
-                                    for (let i = 0; i < formattedLines.length; i++) {
-                                        if (formattedLines[i].includes(`"${fieldName}":`)) {
-                                            formattedLines[i] = formattedLines[i].replace(/,\s*$/, '') + ' ' + comment;
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        return formattedLines.join('\n');
-                    };
-
-                    const formatted = formatJsonWithComments(jsonValue);
+                    const { parsed: obj } = parseJsonWithComments(jsonValue);
+                    const formatted = JSON.stringify(obj, null, 2);
 
                     if (jsonEditorInstance.current) {
                         jsonEditorInstance.current.setValue(formatted);
@@ -2072,7 +2037,8 @@
             );
         }
 
-        // 以下辅助函数保持不变
+        // ============= 修复的辅助函数 =============
+
         function isTimeString(value) {
             return TIME_PATTERNS.some(pattern => pattern.test(value));
         }
@@ -2103,31 +2069,35 @@
             }
         }
 
+        // 修复的字段名格式化函数（保留中文）
         function formatFieldName(name, format, lang, isStructName = false) {
             if (!name || name.trim() === '') return name;
 
-            let cleaned = name.replace(/[^a-zA-Z0-9_\u4e00-\u9fa5]/g, '_');
-            const hasChinese = /[\u4e00-\u9fa5]/.test(cleaned);
-            if (hasChinese) {
-                cleaned = cleaned.replace(/[\u4e00-\u9fa5]+/g, (match) => 'field');
+            // 检查是否是中文字段
+            const hasChinese = /[\u4e00-\u9fa5]/.test(name);
+
+            let cleaned = name;
+
+            // 如果不是中文，进行格式转换
+            if (!hasChinese && CASE_FORMATS[format]) {
+                cleaned = CASE_FORMATS[format].fn(cleaned);
             }
 
-            let formatted;
-            if (CASE_FORMATS[format]) {
-                formatted = CASE_FORMATS[format].fn(cleaned);
-            } else {
-                formatted = cleaned;
-            }
-
+            // Go语言的结构体名需要首字母大写
             if (lang === 'go' && isStructName) {
-                formatted = formatted.charAt(0).toUpperCase() + formatted.slice(1);
+                if (hasChinese) {
+                    cleaned = cleaned;
+                } else {
+                    cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+                }
             }
 
-            if (/^\d/.test(formatted)) {
-                formatted = 'field' + formatted;
+            // 如果开头是数字，添加前缀
+            if (/^\d/.test(cleaned)) {
+                cleaned = 'field' + cleaned;
             }
 
-            return formatted;
+            return cleaned;
         }
 
         function generateCodeFromObject(obj, lang, structName, goTags, inlineStruct, detectTime, comments, caseFormat) {
@@ -2143,6 +2113,7 @@
             return `// 不支持的语言: ${lang}`;
         }
 
+        // 修复的inferType函数，支持多维数组
         function inferType(value, lang, key = '', detectTime = false, parentPath = '') {
             if (detectTime && isTimeField(key, value)) {
                 return getTimeType(lang);
@@ -2167,31 +2138,49 @@
                 }
 
                 const firstItem = value[0];
-                let allSameType = true;
 
-                for (let i = 1; i < Math.min(value.length, 5); i++) {
-                    if (typeof value[i] !== typeof firstItem) {
-                        allSameType = false;
-                        break;
-                    }
+                // 处理多维数组
+                if (Array.isArray(firstItem)) {
+                    // 递归推断内部数组类型
+                    const innerType = inferType(firstItem, lang, key, detectTime, parentPath + '.' + key);
+                    const baseType = innerType
+                        .replace('[]', '')
+                        .replace('List<', '')
+                        .replace('>', '')
+                        .replace('Vec<', '')
+                        .replace('List[', '')
+                        .replace(']', '');
+
+                    if (lang === "go") return `[][]${baseType}`;
+                    if (lang === "typescript") return `${baseType}[][]`;
+                    if (lang === "java") return `List<List<${baseType}>>`;
+                    if (lang === "kotlin") return `List<List<${baseType}>>`;
+                    if (lang === "rust") return `Vec<Vec<${baseType}>>`;
+                    if (lang === "python") return `List[List[${baseType}]]`;
                 }
 
-                if (allSameType) {
-                    const itemType = inferType(firstItem, lang, key, detectTime, parentPath + '.' + key);
-                    if (lang === "go") return `[]${itemType}`;
-                    if (lang === "typescript") return `${itemType}[]`;
-                    if (lang === "java") return `List<${itemType}>`;
-                    if (lang === "kotlin") return `List<${itemType}>`;
-                    if (lang === "rust") return `Vec<${itemType}>`;
-                    if (lang === "python") return `List[${itemType}]`;
-                } else {
-                    if (lang === "go") return "[]interface{}";
+                // 检查数组元素是否都是对象
+                const allObjects = value.every(item => item && typeof item === 'object' && !Array.isArray(item));
+
+                if (allObjects) {
+                    // 对于Go语言，返回占位符，由上层函数处理
+                    if (lang === "go") return "[]struct{}";
+                    // 其他语言返回通用类型
                     if (lang === "typescript") return "any[]";
                     if (lang === "java") return "List<Object>";
                     if (lang === "kotlin") return "List<Any?>";
                     if (lang === "rust") return "Vec<serde_json::Value>";
                     if (lang === "python") return "List[Any]";
                 }
+
+                // 基本类型数组
+                const itemType = inferType(firstItem, lang, key, detectTime, parentPath + '.' + key);
+                if (lang === "go") return `[]${itemType}`;
+                if (lang === "typescript") return `${itemType}[]`;
+                if (lang === "java") return `List<${itemType}>`;
+                if (lang === "kotlin") return `List<${itemType}>`;
+                if (lang === "rust") return `Vec<${itemType}>`;
+                if (lang === "python") return `List[${itemType}]`;
             }
 
             if (typeof value === "object" && value !== null && !Array.isArray(value)) {
@@ -2304,6 +2293,7 @@
             return code;
         }
 
+        // 修复的genGoStruct函数，正确处理多维数组
         function genGoStruct(obj, name, tags, inlineStruct, detectTime, allStructs = {}, depth = 0, comments, formatName, path = '') {
             if (depth > 20) {
                 return `type ${name} struct {\n  // 嵌套深度过大，建议简化JSON结构\n  Data map[string]interface{} \`json:"data"\`\n}`;
@@ -2351,47 +2341,67 @@
 
                 const tagStr = tagParts.length > 0 ? ` \`${tagParts.join(" ")}\`` : "";
 
-                if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-                    const nestedStructName = formatName(key, true);
-
-                    if (Object.keys(value).length === 0) {
-                        code += `  ${fieldName} map[string]interface{}${tagStr}\n`;
-                    } else if (inlineStruct) {
-                        code += `  ${fieldName} ${genGoInlineStruct(value, nestedStructName, tags, detectTime, depth + 1, comments, formatName, currentPath)}${tagStr}\n`;
-                    } else {
-                        code += `  ${fieldName} ${nestedStructName}${tagStr}\n`;
-
-                        if (!allStructs[nestedStructName]) {
-                            allStructs[nestedStructName] = genGoStruct(value, nestedStructName, tags, inlineStruct, detectTime, allStructs, depth + 1, comments, formatName, currentPath);
-                        }
-                    }
-                }
-                else if (Array.isArray(value)) {
-                    if (value.length === 0) {
-                        code += `  ${fieldName} []interface{}${tagStr}\n`;
-                    } else {
-                        const firstItem = value[0];
-
-                        if (Array.isArray(firstItem)) {
-                            code += `  ${fieldName} [][]interface{}${tagStr}\n`;
-                        } else if (typeof firstItem === "object" && firstItem !== null) {
-                            const itemTypeName = formatName(key.endsWith('s') ? key.slice(0, -1) : key + 'Item', true);
-
-                            if (inlineStruct) {
-                                code += `  ${fieldName} []${genGoInlineStruct(firstItem, itemTypeName, tags, detectTime, depth + 1, comments, formatName, currentPath)}${tagStr}\n`;
-                            } else {
-                                code += `  ${fieldName} []${itemTypeName}${tagStr}\n`;
-
-                                if (!allStructs[itemTypeName]) {
-                                    allStructs[itemTypeName] = genGoStruct(firstItem, itemTypeName, tags, inlineStruct, detectTime, allStructs, depth + 1, comments, formatName, currentPath);
-                                }
-                            }
+                if (typeof value === "object" && value !== null) {
+                    if (Array.isArray(value)) {
+                        // 处理数组类型
+                        if (value.length === 0) {
+                            code += `  ${fieldName} []interface{}${tagStr}\n`;
                         } else {
-                            const itemType = inferType(firstItem, "go", key, detectTime, currentPath);
-                            code += `  ${fieldName} []${itemType}${tagStr}\n`;
+                            const firstItem = value[0];
+
+                            // 处理多维数组
+                            if (Array.isArray(firstItem)) {
+                                // 多维数组中的元素可能是对象
+                                const nestedItem = firstItem[0] || {};
+                                if (typeof nestedItem === 'object' && nestedItem !== null && Object.keys(nestedItem).length > 0) {
+                                    const itemTypeName = formatName(key, true) + 'Item';
+                                    if (!allStructs[itemTypeName]) {
+                                        // 递归生成嵌套结构体
+                                        allStructs[itemTypeName] = genGoStruct(nestedItem, itemTypeName, tags, false, detectTime, allStructs, depth + 1, comments, formatName, currentPath);
+                                    }
+                                    code += `  ${fieldName} [][]${itemTypeName}${tagStr}\n`;
+                                } else {
+                                    // 多维基本类型数组
+                                    const itemType = inferType(nestedItem, "go", key, detectTime, currentPath);
+                                    code += `  ${fieldName} [][]${itemType}${tagStr}\n`;
+                                }
+                            } else if (typeof firstItem === "object" && firstItem !== null) {
+                                // 对象数组
+                                const itemTypeName = formatName(key.endsWith('s') ? key.slice(0, -1) : key + 'Item', true);
+
+                                if (inlineStruct) {
+                                    code += `  ${fieldName} []${genGoInlineStruct(firstItem, itemTypeName, tags, detectTime, depth + 1, comments, formatName, currentPath)}${tagStr}\n`;
+                                } else {
+                                    code += `  ${fieldName} []${itemTypeName}${tagStr}\n`;
+
+                                    if (!allStructs[itemTypeName]) {
+                                        allStructs[itemTypeName] = genGoStruct(firstItem, itemTypeName, tags, inlineStruct, detectTime, allStructs, depth + 1, comments, formatName, currentPath);
+                                    }
+                                }
+                            } else {
+                                // 基本类型数组
+                                const itemType = inferType(firstItem, "go", key, detectTime, currentPath);
+                                code += `  ${fieldName} []${itemType}${tagStr}\n`;
+                            }
+                        }
+                    } else {
+                        // 对象类型
+                        const nestedStructName = formatName(key, true);
+
+                        if (Object.keys(value).length === 0) {
+                            code += `  ${fieldName} map[string]interface{}${tagStr}\n`;
+                        } else if (inlineStruct) {
+                            code += `  ${fieldName} ${genGoInlineStruct(value, nestedStructName, tags, detectTime, depth + 1, comments, formatName, currentPath)}${tagStr}\n`;
+                        } else {
+                            code += `  ${fieldName} ${nestedStructName}${tagStr}\n`;
+
+                            if (!allStructs[nestedStructName]) {
+                                allStructs[nestedStructName] = genGoStruct(value, nestedStructName, tags, inlineStruct, detectTime, allStructs, depth + 1, comments, formatName, currentPath);
+                            }
                         }
                     }
                 } else {
+                    // 基本类型
                     code += `  ${fieldName} ${fieldType}${tagStr}\n`;
                 }
             }
