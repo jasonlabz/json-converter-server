@@ -3,12 +3,13 @@ package bootstrap
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"log"
 	"math"
+	"os"
 	"time"
 
-	"github.com/jasonlabz/potato/configx/file"
-	"github.com/jasonlabz/potato/utils"
+	"github.com/spf13/viper"
 )
 
 var confPaths = []string{"./conf/application.yaml", "./conf/server.yaml", "./conf/config.yaml",
@@ -302,6 +303,32 @@ func (c *Config) Validate() error {
 	return nil
 }
 
+func parseConfigByViper(configFile string, dest any) (err error) {
+	v := viper.New()
+	v.SetConfigFile(configFile)
+	err = v.ReadInConfig()
+	if err != nil {
+		err = fmt.Errorf("failed to read config file: %w", err)
+		return
+	}
+	// 直接反序列化为Struct
+	if err = v.Unmarshal(dest); err != nil {
+		err = fmt.Errorf("failed to Unmarshal: %w", err)
+		return
+	}
+	return
+}
+
+// IsExist 判断所给路径文件/文件夹是否存在
+func IsExist(path string) bool {
+	_, err := os.Stat(path) // os.Stat获取文件信息
+	if err != nil {
+		// return os.IsExist(err)
+		return errors.Is(err, fs.ErrExist)
+	}
+	return true
+}
+
 func init() {
 	// 读取服务配置文件
 	var configLoad bool
@@ -309,10 +336,10 @@ func init() {
 		if configLoad {
 			break
 		}
-		if !utils.IsExist(config) {
+		if !IsExist(config) {
 			continue
 		}
-		err := file.ParseConfigByViper(config, applicationConfig)
+		err := parseConfigByViper(config, applicationConfig)
 		if err != nil {
 			log.Printf("[init] -- failed to read config file: %s, err:%v", config, err)
 			continue
