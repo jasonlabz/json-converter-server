@@ -5,7 +5,7 @@
     <title> JSON 工具</title>
 
     <!-- 添加网站图标 -->
-<!--    <link rel="icon" href="./libs/icon/o-json.png" type="image/x-icon">-->
+    <!--    <link rel="icon" href="./libs/icon/o-json.png" type="image/x-icon">-->
     <link rel="icon" href="./libs/icon/json.png" type="image/x-icon">
     <link rel="stylesheet" href="./libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -742,6 +742,47 @@
         .monaco-editor {
             height: 100% !important;
         }
+
+        /* 新增：错误行标记 */
+        .error-line {
+            background-color: rgba(248, 113, 113, 0.2) !important;
+        }
+
+        .error-gutter {
+            background-color: rgba(248, 113, 113, 0.4) !important;
+            color: #f87171 !important;
+        }
+
+        /* 新增：中文转码相关样式 */
+        .unicode-preview {
+            font-size: 10px;
+            color: #86efac;
+            margin-top: 2px;
+            font-family: monospace;
+        }
+
+        /* 格式化错误提示 */
+        .format-error-details {
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 11px;
+            color: #f87171;
+        }
+
+        .format-error-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(248, 113, 113, 0.1);
+        }
+
+        .format-error-line:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
@@ -935,30 +976,31 @@
             const [includeComments, setIncludeComments] = useState(true);
             const [mergeArrayFields, setMergeArrayFields] = useState(true); // 默认开启合并
             const [caseFormat, setCaseFormat] = useState("pascal");
-            const [isCodeGenMode, setIsCodeGenMode] = useState(true);
-            const [jsonText, setJsonText] = useState(DEFAULT_JSON); // 使用DEFAULT_JSON
+            const [isCodeGenMode, setIsCodeGenMode] = useState(false); // 需求1：默认关闭代码生成模式
+            const [jsonText, setJsonText] = useState(DEFAULT_JSON);
             const [generatedCode, setGeneratedCode] = useState("");
             const [error, setError] = useState("");
             const [isGenerating, setIsGenerating] = useState(false);
-            const [jsonStats, setJsonStats] = useState({ lines: 0, chars: 0, commentLines: 0 });
+            const [jsonStats, setJsonStats] = useState({ lines: 0, chars: 0, commentLines: 0, errorLines: 0 });
             const [codeStats, setCodeStats] = useState({ lines: 0, chars: 0 });
             const [timeFieldsDetected, setTimeFieldsDetected] = useState(0);
             const [generationInfo, setGenerationInfo] = useState(null);
+            const [formatErrors, setFormatErrors] = useState([]); // 新增：格式化错误信息
 
             const jsonEditorRef = useRef(null);
             const jsonEditorInstance = useRef(null);
             const codeEditorRef = useRef(null);
             const codeEditorInstance = useRef(null);
 
-            // 修复的数组合并工具函数（支持多维数组递归合并）
-            const mergeArrayItems = useCallback((array) => {
+            // 改进的数组合并工具函数（支持多维数组递归合并和深度字段合并）
+            const mergeArrayItems = useCallback((array, path = '') => {
                 if (!array || array.length <= 1) return array;
 
                 const firstItem = array[0];
 
                 // 处理多维数组：递归处理子数组
                 if (Array.isArray(firstItem)) {
-                    return array.map(subArray => mergeArrayItems(subArray));
+                    return array.map(subArray => mergeArrayItems(subArray, path + '[]'));
                 }
 
                 // 处理对象数组
@@ -986,36 +1028,105 @@
 
                     if (allSameStructure) return array;
 
-                    // 合并所有字段
-                    const allFields = new Set();
+                    // 收集所有对象的字段（递归）
+                    const allFields = new Map(); // 使用Map记录每个字段的类型和值
+
                     array.forEach(item => {
                         if (item && typeof item === 'object' && !Array.isArray(item)) {
-                            Object.keys(item).forEach(key => allFields.add(key));
+                            const collectFields = (obj, prefix = '') => {
+                                Object.keys(obj).forEach(key => {
+                                    const fullPath = prefix ? `${prefix}.${key}` : key;
+                                    const value = obj[key];
+
+                                    if (Array.isArray(value)) {
+                                        // 对于数组，递归处理
+                                        if (value.length > 0 && typeof value[0] === 'object') {
+                                            // 递归收集数组内的字段
+                                            const mergedArray = mergeArrayItems(value, fullPath);
+                                            allFields.set(fullPath, {
+                                                type: 'array',
+                                                values: [mergedArray]
+                                            });
+                                        } else {
+                                            // 基本类型数组
+                                            if (!allFields.has(fullPath)) {
+                                                allFields.set(fullPath, { type: 'array', values: [] });
+                                            }
+                                            allFields.get(fullPath).values.push(value);
+                                        }
+                                    } else if (value && typeof value === 'object') {
+                                        // 递归收集嵌套对象
+                                        collectFields(value, fullPath);
+                                    } else {
+                                        // 基本类型
+                                        if (!allFields.has(fullPath)) {
+                                            allFields.set(fullPath, { type: 'primitive', values: [] });
+                                        }
+                                        allFields.get(fullPath).values.push(value);
+                                    }
+                                });
+                            };
+                            collectFields(item);
                         }
                     });
 
+                    // 创建合并后的数组
                     return array.map(item => {
                         if (!item || typeof item !== 'object' || Array.isArray(item)) {
                             return item;
                         }
 
-                        const mergedItem = {};
-                        allFields.forEach(field => {
-                            if (item && item.hasOwnProperty(field)) {
-                                // 递归处理嵌套的数组
-                                if (Array.isArray(item[field])) {
-                                    mergedItem[field] = mergeArrayItems(item[field]);
-                                } else if (item[field] && typeof item[field] === 'object') {
-                                    // 对于嵌套对象，如果也是数组结构则递归合并
-                                    mergedItem[field] = item[field];
-                                } else {
-                                    mergedItem[field] = item[field];
+                        const createMergedObject = (fieldsMap, currentObj = {}, prefix = '') => {
+                            const result = { ...currentObj };
+
+                            fieldsMap.forEach((fieldInfo, fieldPath) => {
+                                if (!fieldPath.startsWith(prefix) && prefix) {
+                                    // 不属于当前层级，跳过
+                                    return;
                                 }
-                            } else {
-                                mergedItem[field] = '';
-                            }
-                        });
-                        return mergedItem;
+
+                                const relativePath = prefix ? fieldPath.substring(prefix.length + 1) : fieldPath;
+                                const pathParts = relativePath.split('.');
+                                const fieldName = pathParts[0];
+
+                                if (pathParts.length === 1) {
+                                    // 当前层级的字段
+                                    if (item && item.hasOwnProperty(fieldName)) {
+                                        const value = item[fieldName];
+                                        if (fieldInfo.type === 'array' && Array.isArray(value)) {
+                                            if (value.length > 0 && typeof value[0] === 'object') {
+                                                // 递归合并嵌套数组
+                                                result[fieldName] = mergeArrayItems(value, fieldPath);
+                                            } else {
+                                                result[fieldName] = value;
+                                            }
+                                        } else if (value && typeof value === 'object') {
+                                            // 嵌套对象，递归处理
+                                            const nestedFields = new Map();
+                                            fieldsMap.forEach((info, path) => {
+                                                if (path.startsWith(fieldPath + '.')) {
+                                                    nestedFields.set(path, info);
+                                                }
+                                            });
+                                            result[fieldName] = createMergedObject(nestedFields, value, fieldPath);
+                                        } else {
+                                            result[fieldName] = value;
+                                        }
+                                    } else {
+                                        // 缺失的字段
+                                        if (fieldInfo.type === 'array') {
+                                            result[fieldName] = [];
+                                        } else {
+                                            result[fieldName] = '';
+                                        }
+                                    }
+                                }
+                            });
+
+                            return result;
+                        };
+
+                        return createMergedObject(allFields, item);
                     });
                 }
 
@@ -1106,14 +1217,14 @@
                         const lines = value.split('\n').length;
                         const chars = value.length;
                         const commentLines = (value.match(/\/\/.*$/g) || []).length;
-                        setJsonStats({ lines, chars, commentLines });
+                        setJsonStats(prev => ({ ...prev, lines, chars, commentLines }));
                     });
                 }
 
                 // 修复：始终初始化代码编辑器，不依赖 isCodeGenMode
                 if (!codeEditorInstance.current && codeEditorRef.current) {
                     codeEditorInstance.current = monaco.editor.create(codeEditorRef.current, {
-                        value: "// 请先生成代码\n// 点击\"生成代码\"按钮开始",
+                        value: "// 请打开代码生成开关并点击\"生成代码\"按钮",
                         language: "go",
                         theme: "vs-dark",
                         readOnly: false,
@@ -1245,6 +1356,264 @@
                     }
                 }
             }, []);
+
+            // 中文转Unicode函数
+            const chineseToUnicode = useCallback((str) => {
+                let result = '';
+                for (let i = 0; i < str.length; i++) {
+                    const charCode = str.charCodeAt(i);
+                    if (charCode > 127) {
+                        result += '\\u' + charCode.toString(16).padStart(4, '0');
+                    } else {
+                        result += str.charAt(i);
+                    }
+                }
+                return result;
+            }, []);
+
+            // Unicode转中文函数
+            const unicodeToChinese = useCallback((str) => {
+                return str.replace(/\\u[\dA-F]{4}/gi, (match) => {
+                    return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
+                });
+            }, []);
+
+            // 改进的格式化函数：智能修复并格式化JSON
+            const formatJsonIntelligently = useCallback(() => {
+                try {
+                    const jsonValue = jsonEditorInstance.current?.getValue() || jsonText;
+                    const errors = [];
+
+                    // 尝试直接格式化
+                    try {
+                        const { parsed: obj } = parseJsonWithComments(jsonValue);
+                        const formatted = JSON.stringify(obj, null, 2);
+                        if (jsonEditorInstance.current) {
+                            jsonEditorInstance.current.setValue(formatted);
+                        }
+                        setJsonText(formatted);
+                        setError("");
+                        setFormatErrors([]);
+                        setJsonStats(prev => ({ ...prev, errorLines: 0 }));
+                        return;
+                    } catch (fullError) {
+                        console.log('标准格式化失败，尝试智能修复');
+                    }
+
+                    // 智能修复JSON
+                    const lines = jsonValue.split('\n');
+                    let fixedJson = '';
+                    let lineNumber = 1;
+                    let inString = false;
+                    let escapeNext = false;
+                    let braceStack = [];
+                    let lastValidIndex = 0;
+                    let isValidSoFar = true;
+
+                    // 尝试逐部分解析
+                    const validParts = [];
+                    let currentPart = '';
+
+                    for (let i = 0; i < jsonValue.length; i++) {
+                        const char = jsonValue[i];
+
+                        if (!escapeNext && char === '\\') {
+                            escapeNext = true;
+                            currentPart += char;
+                        } else if (!escapeNext && char === '"') {
+                            inString = !inString;
+                            currentPart += char;
+                        } else if (!inString) {
+                            if (char === '{' || char === '[') {
+                                braceStack.push(char);
+                                currentPart += char;
+                            } else if (char === '}' || char === ']') {
+                                if (braceStack.length > 0) {
+                                    const lastBrace = braceStack.pop();
+                                    if ((char === '}' && lastBrace === '{') || (char === ']' && lastBrace === '[')) {
+                                        currentPart += char;
+                                    } else {
+                                        // 括号不匹配，停止当前部分
+                                        errors.push({
+                                            line: lineNumber,
+                                            index: i,
+                                            error: `括号不匹配: 期望 ${lastBrace === '{' ? '}' : ']'}, 但找到 ${char}`
+                                        });
+                                        isValidSoFar = false;
+                                    }
+                                } else {
+                                    errors.push({
+                                        line: lineNumber,
+                                        index: i,
+                                        error: `多余的 ${char} 括号`
+                                    });
+                                }
+                            } else if (char === ',') {
+                                currentPart += char;
+                                // 尝试验证当前部分
+                                try {
+                                    JSON.parse('{' + currentPart + '}');
+                                    validParts.push(currentPart);
+                                    currentPart = '';
+                                } catch (e) {
+                                    // 继续累积
+                                }
+                            } else if (char === '\n') {
+                                lineNumber++;
+                                currentPart += char;
+                            } else {
+                                currentPart += char;
+                            }
+                        } else {
+                            currentPart += char;
+                        }
+
+                        escapeNext = false;
+
+                        // 尝试解析累积的部分
+                        if (!inString && braceStack.length === 0 && currentPart.trim()) {
+                            try {
+                                const testStr = currentPart;
+                                // 尝试包装成对象来验证
+                                if (testStr.startsWith('{') || testStr.startsWith('[')) {
+                                    JSON.parse(testStr);
+                                    validParts.push(testStr);
+                                    currentPart = '';
+                                } else {
+                                    JSON.parse('{' + testStr + '}');
+                                    validParts.push(testStr);
+                                    currentPart = '';
+                                }
+                            } catch (e) {
+                                // 继续累积
+                            }
+                        }
+                    }
+
+                    // 处理最后的部分
+                    if (currentPart.trim()) {
+                        try {
+                            JSON.parse(currentPart);
+                            validParts.push(currentPart);
+                        } catch (e) {
+                            // 尝试修复
+                            if (braceStack.length > 0) {
+                                // 添加缺失的括号
+                                while (braceStack.length > 0) {
+                                    const missing = braceStack.pop();
+                                    currentPart += missing === '{' ? '}' : ']';
+                                }
+                                try {
+                                    JSON.parse(currentPart);
+                                    validParts.push(currentPart);
+                                } catch (e2) {
+                                    errors.push({
+                                        line: lineNumber,
+                                        index: jsonValue.length - 1,
+                                        error: '无法修复的JSON片段'
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    // 构建修复后的JSON
+                    let fixed = validParts.join(',');
+
+                    // 尝试格式化修复后的JSON
+                    try {
+                        const parsed = JSON.parse(fixed);
+                        const formatted = JSON.stringify(parsed, null, 2);
+
+                        if (jsonEditorInstance.current) {
+                            jsonEditorInstance.current.setValue(formatted);
+                        }
+                        setJsonText(formatted);
+
+                        // 在编辑器中标记错误行
+                        if (jsonEditorInstance.current && errors.length > 0) {
+                            const model = jsonEditorInstance.current.getModel();
+                            if (model) {
+                                // 清除之前的装饰
+                                const oldDecorations = jsonEditorInstance.current.getModel().getAllDecorations();
+                                const oldErrorDecorations = oldDecorations.filter(d =>
+                                    d.options.className === 'error-line' ||
+                                    d.options.glyphMarginClassName === 'error-gutter'
+                                ).map(d => d.id);
+
+                                if (oldErrorDecorations.length > 0) {
+                                    jsonEditorInstance.current.deltaDecorations(oldErrorDecorations, []);
+                                }
+
+                                // 添加新的错误标记（基于原始行号）
+                                const newDecorations = errors.map(error => ({
+                                    range: new monaco.Range(error.line, 1, error.line, 1),
+                                    options: {
+                                        isWholeLine: true,
+                                        className: 'error-line',
+                                        glyphMarginClassName: 'error-gutter',
+                                        glyphMarginHoverMessage: { value: `第 ${error.line} 行: ${error.error}` }
+                                    }
+                                }));
+
+                                jsonEditorInstance.current.deltaDecorations([], newDecorations);
+                            }
+                        }
+
+                        if (errors.length > 0) {
+                            const errorMsg = `JSON格式有误，已修复并格式化。修复了 ${errors.length} 处错误`;
+                            setError(errorMsg);
+                            setFormatErrors(errors);
+                            setJsonStats(prev => ({ ...prev, errorLines: errors.length }));
+                        } else {
+                            setError("");
+                            setFormatErrors([]);
+                            setJsonStats(prev => ({ ...prev, errorLines: 0 }));
+                        }
+                    } catch (finalError) {
+                        setError(`无法修复JSON: ${finalError.message}`);
+                        setFormatErrors(errors);
+                    }
+
+                } catch (err) {
+                    setError(`格式化错误: ${err.message}`);
+                    setFormatErrors([]);
+                }
+            }, [jsonText, parseJsonWithComments]);
+
+            // 需求3：中文转Unicode功能
+            const convertChineseToUnicode = useCallback(() => {
+                try {
+                    const jsonValue = jsonEditorInstance.current?.getValue() || jsonText;
+                    const converted = chineseToUnicode(jsonValue);
+
+                    if (jsonEditorInstance.current) {
+                        jsonEditorInstance.current.setValue(converted);
+                    }
+                    setJsonText(converted);
+                    setError("");
+                    setFormatErrors([]);
+                } catch (err) {
+                    setError(`中文转Unicode错误: ${err.message}`);
+                }
+            }, [jsonText, chineseToUnicode]);
+
+            // 需求3：Unicode转中文功能
+            const convertUnicodeToChinese = useCallback(() => {
+                try {
+                    const jsonValue = jsonEditorInstance.current?.getValue() || jsonText;
+                    const converted = unicodeToChinese(jsonValue);
+
+                    if (jsonEditorInstance.current) {
+                        jsonEditorInstance.current.setValue(converted);
+                    }
+                    setJsonText(converted);
+                    setError("");
+                    setFormatErrors([]);
+                } catch (err) {
+                    setError(`Unicode转中文错误: ${err.message}`);
+                }
+            }, [jsonText, unicodeToChinese]);
 
             // 清理JSON：移除注释并格式化
             const cleanJson = useCallback((jsonString) => {
@@ -1435,22 +1804,9 @@
                 }
             }, [lang, goTags, structName, inlineStruct, detectTime, jsonText, mergeArrayFields, detectTimeFields, includeComments, caseFormat, parseJsonWithComments, collectGenerationInfo, processObject]);
 
-            // JSON格式化函数
+            // JSON格式化函数（使用智能格式化）
             const formatJson = () => {
-                try {
-                    const jsonValue = jsonEditorInstance.current?.getValue() || jsonText;
-                    const { parsed: obj } = parseJsonWithComments(jsonValue);
-                    const formatted = JSON.stringify(obj, null, 2);
-
-                    if (jsonEditorInstance.current) {
-                        jsonEditorInstance.current.setValue(formatted);
-                    }
-                    setJsonText(formatted);
-                    setError("");
-                    setGenerationInfo(null);
-                } catch (err) {
-                    setError(`格式化错误: ${err.message}`);
-                }
+                formatJsonIntelligently();
             };
 
             const minifyJson = () => {
@@ -1464,7 +1820,8 @@
                     }
                     setJsonText(minified);
                     setError("");
-                    setGenerationInfo(null);
+                    setFormatErrors([]);
+                    setJsonStats(prev => ({ ...prev, errorLines: 0 }));
                 } catch (err) {
                     setError(`压缩错误: ${err.message}`);
                 }
@@ -1480,7 +1837,8 @@
                     }
                     setJsonText(escaped);
                     setError("");
-                    setGenerationInfo(null);
+                    setFormatErrors([]);
+                    setJsonStats(prev => ({ ...prev, errorLines: 0 }));
                 } catch (err) {
                     setError(`转义错误: ${err.message}`);
                 }
@@ -1496,7 +1854,8 @@
                     }
                     setJsonText(unescaped);
                     setError("");
-                    setGenerationInfo(null);
+                    setFormatErrors([]);
+                    setJsonStats(prev => ({ ...prev, errorLines: 0 }));
                 } catch (err) {
                     setError(`去转义错误: ${err.message}`);
                 }
@@ -1547,19 +1906,29 @@
                     }
                     setJsonText(cleaned);
                     setError("");
-                    setGenerationInfo(null);
+                    setFormatErrors([]);
+                    setJsonStats(prev => ({ ...prev, errorLines: 0 }));
                 } catch (err) {
                     setError(`移除注释错误: ${err.message}`);
                 }
             };
 
-            const resetJson = () => {
+            // 需求2和3：清空功能，同时清空JSON框和代码框
+            const clearAll = () => {
                 if (jsonEditorInstance.current) {
-                    jsonEditorInstance.current.setValue(DEFAULT_JSON);
+                    jsonEditorInstance.current.setValue('');
                 }
-                setJsonText(DEFAULT_JSON);
+                if (codeEditorInstance.current) {
+                    codeEditorInstance.current.setValue('');
+                }
+                setJsonText('');
+                setGeneratedCode('');
                 setError("");
+                setFormatErrors([]);
                 setGenerationInfo(null);
+                setJsonStats({ lines: 0, chars: 0, commentLines: 0, errorLines: 0 });
+                setCodeStats({ lines: 0, chars: 0 });
+                setTimeFieldsDetected(0);
             };
 
             const loadComplexJson = () => {
@@ -1568,7 +1937,8 @@
                 }
                 setJsonText(COMPLEX_JSON);
                 setError("");
-                setGenerationInfo(null);
+                setFormatErrors([]);
+                setJsonStats(prev => ({ ...prev, errorLines: 0 }));
             };
 
             // 复制代码到剪贴板
@@ -1681,7 +2051,7 @@
                             React.createElement("button", {
                                     className: "btn btn-secondary btn-compact",
                                     onClick: formatJson,
-                                    title: "格式化JSON（保留注释）"
+                                    title: "智能格式化JSON（自动修复错误）"
                                 },
                                 React.createElement("i", { className: "fas fa-indent" }),
                                 "格式化"
@@ -1718,21 +2088,40 @@
                                 React.createElement("i", { className: "fas fa-code" }),
                                 "去转义"
                             ),
+                            // 需求3：新增中文转Unicode功能
                             React.createElement("button", {
                                     className: "btn btn-secondary btn-compact",
-                                    onClick: resetJson,
-                                    title: "重置为默认JSON"
+                                    onClick: convertChineseToUnicode,
+                                    title: "中文转Unicode编码"
                                 },
-                                React.createElement("i", { className: "fas fa-redo" }),
-                                "重置"
+                                React.createElement("i", { className: "fas fa-language" }),
+                                "中文→Unicode"
+                            ),
+                            // 需求3：新增Unicode转中文功能
+                            React.createElement("button", {
+                                    className: "btn btn-secondary btn-compact",
+                                    onClick: convertUnicodeToChinese,
+                                    title: "Unicode编码转中文"
+                                },
+                                React.createElement("i", { className: "fas fa-language" }),
+                                "Unicode→中文"
                             ),
                             React.createElement("button", {
                                     className: "btn btn-secondary btn-compact",
                                     onClick: loadComplexJson,
-                                    title: "加载复杂JSON示例"
+                                    title: "加载复杂JSON示例（测试数组合并）"
                                 },
                                 React.createElement("i", { className: "fas fa-cogs" }),
                                 "复杂示例"
+                            ),
+                            // 需求1：清空按钮放复杂示例后面
+                            React.createElement("button", {
+                                    className: "btn btn-secondary btn-compact",
+                                    onClick: clearAll,
+                                    title: "清空JSON编辑器和代码编辑器"
+                                },
+                                React.createElement("i", { className: "fas fa-trash" }),
+                                "清空"
                             ),
                             isCodeGenMode && React.createElement("button", {
                                     className: "btn btn-primary btn-compact",
@@ -1918,6 +2307,29 @@
                                 React.createElement("div", { key: index }, warning)
                             )
                         )
+                    ),
+
+                    // 显示格式化错误详细信息
+                    formatErrors.length > 0 && React.createElement("div", { className: "format-error-details" },
+                        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" } },
+                            React.createElement("i", { className: "fas fa-exclamation-circle" }),
+                            React.createElement("strong", null, `发现 ${formatErrors.length} 个格式错误:`)
+                        ),
+                        formatErrors.slice(0, 5).map((error, index) =>
+                            React.createElement("div", { key: index, className: "format-error-line" },
+                                React.createElement("span", { className: "unicode-preview" },
+                                    `第 ${error.line} 行: ${error.error}`
+                                ),
+                                index < 3 && error.index &&
+                                    React.createElement("span", { style: { fontSize: "10px", color: "#94a3b8" } },
+                                        `位置: ${error.index}`
+                                    )
+                            )
+                        ),
+                        formatErrors.length > 5 &&
+                            React.createElement("div", { className: "unicode-preview", style: { marginTop: "4px" } },
+                                `... 还有 ${formatErrors.length - 5} 个错误`
+                            )
                     )
                 ),
 
@@ -1930,13 +2342,17 @@
                                 React.createElement("i", { className: "fas fa-code" }),
                                 "JSON 输入"
                             ),
-                            jsonStats.commentLines > 0 && React.createElement("div", { className: "comment-indicator" },
-                                React.createElement("i", { className: "fas fa-comment" }),
-                                `${jsonStats.commentLines} 条注释`
-                            ),
                             React.createElement("div", { className: "json-tools" },
                                 React.createElement("div", { className: "panel-stats" },
-                                    `${jsonStats.lines} 行, ${jsonStats.chars} 字符`
+                                    `${jsonStats.lines} 行, ${jsonStats.chars} 字符`,
+                                    jsonStats.commentLines > 0 &&
+                                        React.createElement("span", { style: { marginLeft: "8px", color: "#60a5fa" } },
+                                            `${jsonStats.commentLines} 注释`
+                                        ),
+                                    jsonStats.errorLines > 0 &&
+                                        React.createElement("span", { style: { marginLeft: "8px", color: "#f87171" } },
+                                            `${jsonStats.errorLines} 错误`
+                                        )
                                 )
                             )
                         ),
@@ -2297,7 +2713,7 @@
             return code;
         }
 
-        // 修复的genGoStruct函数，正确处理多维数组
+        // 修复的genGoStruct函数，正确处理多维数组和深度合并
         function genGoStruct(obj, name, tags, inlineStruct, detectTime, allStructs = {}, depth = 0, comments, formatName, path = '') {
             if (depth > 20) {
                 return `type ${name} struct {\n  // 嵌套深度过大，建议简化JSON结构\n  Data map[string]interface{} \`json:"data"\`\n}`;
