@@ -458,6 +458,38 @@
             overflow: hidden;
         }
 
+        .panel-tabs {
+            display: flex;
+            background: rgba(30, 41, 59, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 4px 8px;
+        }
+
+        .panel-tab {
+            padding: 6px 12px;
+            font-size: 12px;
+            color: #94a3b8;
+            background: none;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .panel-tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #f1f5f9;
+        }
+
+        .panel-tab.active {
+            background: linear-gradient(90deg, #3b82f6, #6366f1);
+            color: white;
+        }
+
+        .panel-tab + .panel-tab {
+            margin-left: 4px;
+        }
+
         .json-panel {
             flex: 1;
         }
@@ -618,6 +650,37 @@
             display: flex;
             gap: 8px;
             margin-left: auto;
+        }
+
+        /* Header栏内容布局 */
+        .panel-header-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        /* Header栏格式转换工具 */
+        .header-conversion-tools {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 6px;
+            padding: 4px 8px;
+        }
+
+        .header-conversion-tools .format-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 3px 6px;
+            height: 24px;
+        }
+
+        .header-conversion-tools .btn-sm {
+            padding: 3px 6px;
+            height: 24px;
+            min-width: 24px;
         }
 
         .format-select {
@@ -783,6 +846,171 @@
         .format-error-line:last-child {
             border-bottom: none;
         }
+
+        /* 新增：对比模式样式 */
+        .diff-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .diff-editor-container {
+            flex: 1;
+            display: flex;
+            gap: 12px;
+        }
+
+        /* 需求2：对比模式布局容器 */
+        .diff-layout {
+            display: flex;
+            height: 100%;
+            align-items: stretch;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .diff-side {
+            flex: 1; /* 默认flex，会被style覆盖 */
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #1e293b;
+            height: 100%;
+            min-width: 0; /* 防止内容撑开 */
+        }
+
+        /* 需求2：终端样式差异信息框 */
+        .diff-info-panel {
+            background: #000000;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            /* 移除margin防止溢出 */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+        }
+
+        .terminal-header {
+            background: #1e293b;
+            padding: 6px 10px;
+            border-bottom: 1px solid #334155;
+            font-size: 12px;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+        }
+
+        .terminal-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .terminal-content {
+            padding: 10px;
+            overflow-y: auto;
+            flex: 1;
+            color: #e2e8f0;
+            font-size: 13px;
+        }
+
+        .diff-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #0f172a;
+            border-bottom: 1px solid #334155;
+            height: 40px;
+        }
+
+        .diff-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: #f1f5f9;
+        }
+
+        .diff-content {
+            flex: 1;
+            position: relative;
+            min-height: 300px;
+        }
+
+        /* 格式选择器样式 */
+        .format-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .format-selector label {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        .format-selector select {
+            background: #1e293b;
+            color: #f1f5f9;
+            border: 1px solid #475569;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        /* 差异高亮样式 */
+        .diff-added {
+            background-color: rgba(34, 197, 94, 0.2) !important;
+        }
+
+        .diff-removed {
+            background-color: rgba(239, 68, 68, 0.2) !important;
+        }
+
+        .diff-modified {
+            background-color: rgba(251, 191, 36, 0.2) !important;
+        }
+
+        .diff-result {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 6px;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #60a5fa;
+        }
+
+        .diff-stat {
+            display: flex;
+            gap: 16px;
+        }
+
+        .diff-stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .diff-stat-added {
+            color: #22c55e;
+        }
+
+        .diff-stat-removed {
+            color: #ef4444;
+        }
+
+        .diff-stat-modified {
+            color: #fbbf24;
+        }
     </style>
 </head>
 <body>
@@ -935,6 +1163,15 @@
   ]
 }`;
 
+        const DATA_FORMATS = {
+            json: { name: 'JSON', icon: 'fas fa-code', monacoLang: 'json' },
+            xml: { name: 'XML', icon: 'fas fa-file-code', monacoLang: 'xml' },
+            yaml: { name: 'YAML', icon: 'fas fa-file-invoice', monacoLang: 'yaml' },
+            toml: { name: 'TOML', icon: 'fas fa-cog', monacoLang: 'ini' },
+            ini: { name: 'INI', icon: 'fas fa-sliders-h', monacoLang: 'ini' },
+            text: { name: 'Text', icon: 'fas fa-font', monacoLang: 'plaintext' }
+        };
+
         // 命名格式配置
         const CASE_FORMATS = {
             pascal: {
@@ -959,6 +1196,22 @@
         };
 
         function App() {
+            // 新增：当前数据格式状态
+            const [dataFormat, setDataFormat] = useState("json");
+            // 新增：对比模式状态
+            const [isDiffMode, setIsDiffMode] = useState(false);
+            const [diffText, setDiffText] = useState("");
+            // 新增：左右两侧独立格式选择
+            const [leftFormat, setLeftFormat] = useState("json");
+            const [rightFormat, setRightFormat] = useState("json");
+            // 新增：对比结果
+            const [diffAnalysis, setDiffAnalysis] = useState(null);
+
+            const diffEditorRef = useRef(null);
+            const diffEditorInstance = useRef(null);
+            // 修复 Hook 报错：新增左侧编辑器 Ref
+            const diffLeftEditorRef = useRef(null);
+
             const [lang, setLang] = useState("go");
             const [goTags, setGoTags] = useState({
                 json: true,
@@ -1177,12 +1430,12 @@
 
                 return process(JSON.parse(JSON.stringify(data)));
             }, [mergeArrayFields, mergeArrayItems]);
-
             // 初始化编辑器
             useEffect(() => {
-                if (!jsonEditorInstance.current && jsonEditorRef.current) {
+                // 如果在非对比模式下，且编辑器容器存在，但实例不存在，则创建
+                if (!isDiffMode && !jsonEditorInstance.current && jsonEditorRef.current) {
                     jsonEditorInstance.current = monaco.editor.create(jsonEditorRef.current, {
-                        value: DEFAULT_JSON,
+                        value: jsonText || DEFAULT_JSON,
                         language: "json",
                         theme: "vs-dark",
                         automaticLayout: true,
@@ -1250,7 +1503,7 @@
                         codeEditorInstance.current = null;
                     }
                 };
-            }, []); // 空依赖数组，只在组件挂载/卸载时执行
+            }, [isDiffMode]); // 依赖 isDiffMode，在切换模式时重新评估
 
             // 更新代码编辑器语言
             useEffect(() => {
@@ -1378,208 +1631,655 @@
                 });
             }, []);
 
+            // ========== 需求1: 多格式转换函数 ==========
+            // JSON转XML - 修复数组处理和无限叠加root问题
+            const jsonToXml = useCallback((obj, rootName = 'root', indent = '') => {
+                const processValue = (key, value, currentIndent, fromArray = false) => {
+                    if (value === null || value === undefined) {
+                        return `${currentIndent}<${key}/>\n`;
+                    }
+                    if (Array.isArray(value)) {
+                        // 修复：数组应该用复数形式包裹，内部元素用单数形式
+                        const singleKey = key.endsWith('s') ? key.slice(0, -1) : key + 'Item';
+                        let arrayContent = `${currentIndent}<${key}>\n`;
+                        arrayContent += value.map(item => processValue(singleKey, item, currentIndent + '  ', true)).join('');
+                        arrayContent += `${currentIndent}</${key}>\n`;
+                        return arrayContent;
+                    }
+                    if (typeof value === 'object') {
+                        let content = '';
+                        content += `${currentIndent}<${key}>\n`;
+                        for (const [k, v] of Object.entries(value)) {
+                            content += processValue(k, v, currentIndent + '  ');
+                        }
+                        content += `${currentIndent}</${key}>\n`;
+                        return content;
+                    }
+                    return `${currentIndent}<${key}>${String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</${key}>\n`;
+                };
+
+                let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+                // 只在顶层添加root标签，避免多次转换时叠加
+                xml += `<${rootName}>\n`;
+                for (const [key, value] of Object.entries(obj)) {
+                    xml += processValue(key, value, '  ');
+                }
+                xml += `</${rootName}>`;
+                return xml;
+            }, []);
+
+            // JSON转YAML - 修复数组处理和时间字符串问题
+            const jsonToYaml = useCallback((obj, indent = 0) => {
+                const spaces = '  '.repeat(indent);
+                let yaml = '';
+                const processValue = (value, currentIndent) => {
+                    if (value === null) return 'null';
+                    if (value === undefined) return '';
+                    if (typeof value === 'boolean') return value ? 'true' : 'false';
+                    if (typeof value === 'number') return String(value);
+                    if (typeof value === 'string') {
+                        // 检测时间字符串，确保完整保留
+                        const isTimeString = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value);
+                        if (isTimeString || value.includes('\n') || value.includes(':') || value.includes('#')) {
+                            return `"${value.replace(/"/g, '\\"')}"`;
+                        }
+                        return value;
+                    }
+                    return String(value);
+                };
+
+                for (const [key, value] of Object.entries(obj)) {
+                    if (Array.isArray(value)) {
+                        yaml += `${spaces}${key}:\n`;
+                        value.forEach(item => {
+                            if (typeof item === 'object' && item !== null) {
+                                const itemYaml = jsonToYaml(item, indent + 1).trim();
+                                if (itemYaml) {
+                                    yaml += `${spaces}- ${itemYaml}\n`;
+                                }
+                            } else {
+                                yaml += `${spaces}- ${processValue(item, indent + 1)}\n`;
+                            }
+                        });
+                    } else if (typeof value === 'object' && value !== null) {
+                        yaml += `${spaces}${key}:\n`;
+                        yaml += jsonToYaml(value, indent + 1);
+                    } else {
+                        const processedValue = processValue(value, indent);
+                        yaml += `${spaces}${key}: ${processedValue}\n`;
+                    }
+                }
+                return yaml;
+            }, []);
+
+            // JSON转TOML
+            const jsonToToml = useCallback((obj, section = '') => {
+                let toml = '';
+                const simpleValues = {};
+                const complexValues = {};
+                for (const [key, value] of Object.entries(obj)) {
+                    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                        complexValues[key] = value;
+                    } else {
+                        simpleValues[key] = value;
+                    }
+                }
+                for (const [key, value] of Object.entries(simpleValues)) {
+                    if (Array.isArray(value)) {
+                        const items = value.map(item => {
+                            if (typeof item === 'string') return `"${item}"`;
+                            return String(item);
+                        }).join(', ');
+                        toml += `${key} = [${items}]\n`;
+                    } else if (typeof value === 'string') {
+                        toml += `${key} = "${value}"\n`;
+                    } else if (typeof value === 'boolean') {
+                        toml += `${key} = ${value}\n`;
+                    } else {
+                        toml += `${key} = ${value}\n`;
+                    }
+                }
+                for (const [key, value] of Object.entries(complexValues)) {
+                    const sectionName = section ? `${section}.${key}` : key;
+                    toml += `\n[${sectionName}]\n`;
+                    toml += jsonToToml(value, sectionName);
+                }
+                return toml;
+            }, []);
+
+            // JSON转INI
+            const jsonToIni = useCallback((obj) => {
+                let ini = '';
+                const globalValues = {};
+                const sections = {};
+                for (const [key, value] of Object.entries(obj)) {
+                    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                        sections[key] = value;
+                    } else {
+                        globalValues[key] = value;
+                    }
+                }
+                for (const [key, value] of Object.entries(globalValues)) {
+                    ini += `${key}=${value}\n`;
+                }
+                for (const [section, values] of Object.entries(sections)) {
+                    ini += `\n[${section}]\n`;
+                    for (const [key, value] of Object.entries(values)) {
+                        if (typeof value !== 'object') {
+                            ini += `${key}=${value}\n`;
+                        }
+                    }
+                }
+                return ini;
+            }, []);
+
+            // XML转JSON (改进实现，避免无限叠加root)
+            const xmlToJson = useCallback((xmlStr) => {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlStr, "text/xml");
+
+                const parseNode = (node) => {
+                    const obj = {};
+
+                    // 处理属性
+                    if (node.attributes && node.attributes.length > 0) {
+                        for (let j = 0; j < node.attributes.length; j++) {
+                            const attribute = node.attributes.item(j);
+                            obj[`@${attribute.nodeName}`] = attribute.nodeValue;
+                        }
+                    }
+
+                    // 处理子节点
+                    if (node.hasChildNodes()) {
+                        const childCounts = {};
+                        const childValues = {};
+
+                        for (let i = 0; i < node.childNodes.length; i++) {
+                            const child = node.childNodes.item(i);
+
+                            if (child.nodeType === 3) { // Text node
+                                const text = child.nodeValue.trim();
+                                if (text) {
+                                    if (!obj['#text']) obj['#text'] = text;
+                                    else if (Array.isArray(obj['#text'])) obj['#text'].push(text);
+                                    else obj['#text'] = [obj['#text'], text];
+                                }
+                            } else if (child.nodeType === 1) { // Element node
+                                const childName = child.nodeName;
+                                const childValue = parseNode(child);
+
+                                if (childCounts[childName]) {
+                                    childCounts[childName]++;
+                                    if (!Array.isArray(childValues[childName])) {
+                                        childValues[childName] = [childValues[childName]];
+                                    }
+                                    childValues[childName].push(childValue);
+                                } else {
+                                    childCounts[childName] = 1;
+                                    childValues[childName] = childValue;
+                                }
+                            }
+                        }
+
+                        // 合并处理后的子节点
+                        Object.entries(childValues).forEach(([name, value]) => {
+                            obj[name] = value;
+                        });
+                    }
+
+                    // 如果只有文本内容，返回文本
+                    if (Object.keys(obj).length === 1 && obj['#text']) {
+                        return obj['#text'];
+                    }
+                    // 如果没有内容，返回空字符串
+                    if (Object.keys(obj).length === 0) {
+                        return "";
+                    }
+
+                    return obj;
+                };
+
+                const root = xmlDoc.documentElement;
+                // 直接返回解析结果，避免额外包装
+                return parseNode(root);
+            }, []);
+
+            // INI转JSON (修复需求3：去除字符串值的转义符号/引号)
+            const iniToJson = useCallback((iniStr) => {
+                const result = {};
+                let currentSection = result;
+
+                iniStr.split('\n').forEach(line => {
+                    line = line.trim();
+                    if (!line || line.startsWith(';') || line.startsWith('#')) return;
+
+                    if (line.startsWith('[') && line.endsWith(']')) {
+                        const sectionName = line.slice(1, -1);
+                        result[sectionName] = {};
+                        currentSection = result[sectionName];
+                    } else if (line.includes('=')) {
+                        const parts = line.split('=');
+                        const key = parts[0].trim();
+                        // 处理值包含 = 的情况
+                        let val = parts.slice(1).join('=').trim();
+
+                        // 去除首尾引号
+                        if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                            val = val.slice(1, -1);
+                        }
+
+                        // 尝试转换布尔值和数字
+                        if (val === 'true') val = true;
+                        else if (val === 'false') val = false;
+                        else if (!isNaN(val) && val !== '') val = Number(val);
+
+                        currentSection[key] = val;
+                    }
+                });
+                return result;
+            }, []);
+
+            // 改进的YAML解析器
+            const yamlToJson = useCallback((yamlStr) => {
+                const lines = yamlStr.split('\n');
+                const root = {};
+                // 使用双栈策略：一个维护上下文，一个维护数组引用
+                const finalResult = {};
+                const ptrs = [{ obj: finalResult, indent: -1 }];
+
+                // 辅助：解析值
+                const parseVal = (val) => {
+                    if (!val) return null;
+                    val = val.trim();
+                    if (val === 'true') return true;
+                    if (val === 'false') return false;
+                    if (val === 'null') return null;
+                    // 修复：不要轻易把看似数字的字符串转数字，除非完全匹配
+                    if (!isNaN(val) && !val.includes(':') && !val.includes('-') && !val.includes('T')) return Number(val);
+                    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+                        return val.slice(1, -1);
+                    }
+                    return val;
+                };
+
+                lines.forEach(line => {
+                    const rawLine = line.replace(/\s+$/, '');
+                    if (!rawLine || rawLine.trim().startsWith('#')) return;
+
+                    const indent = rawLine.search(/\S/);
+                    const trimmed = rawLine.trim();
+
+                    // 回溯父级
+                    while (ptrs.length > 1 && ptrs[ptrs.length - 1].indent >= indent) ptrs.pop();
+                    const curr = ptrs[ptrs.length - 1];
+
+                    // 处理数组项
+                    if (trimmed.startsWith('- ')) {
+                        // 发现数组项，如果当前对象是空对象（刚初始化），转换为数组
+                        if (!Array.isArray(curr.obj) && Object.keys(curr.obj).length === 0) {
+                            if (curr.parent && curr.key) {
+                                curr.parent[curr.key] = [];
+                                curr.obj = curr.parent[curr.key]; // 更新引用
+                            }
+                        }
+
+                        if (Array.isArray(curr.obj)) {
+                            const content = trimmed.substring(2).trim();
+                            const colIdx = content.indexOf(':');
+
+                            // 判断是否是对象项 (key: value)
+                            if (colIdx > 0 && !content.startsWith('"') && !content.startsWith("'")) {
+                                const k = content.substring(0, colIdx).trim();
+                                const v = content.substring(colIdx + 1).trim();
+                                const newItem = {};
+                                newItem[k] = v ? parseVal(v) : {};
+                                curr.obj.push(newItem);
+                                if (!v) ptrs.push({ obj: newItem[k], indent, parent: newItem, key: k });
+                            } else {
+                                // 基本值
+                                curr.obj.push(parseVal(content));
+                            }
+                        }
+                        return;
+                    }
+
+                    // 处理对象键值对
+                    const colIdx = trimmed.indexOf(':');
+                    if (colIdx > 0) {
+                        const k = trimmed.substring(0, colIdx).trim();
+                        const v = trimmed.substring(colIdx + 1).trim();
+                        if (!v) {
+                            // 值为空，可能是嵌套对象或数组
+                            // 先初始化为对象，如果后续遇到 - 会自动转为数组
+                            if (Array.isArray(curr.obj)) {
+                                const newObj = {};
+                                newObj[k] = {};
+                                curr.obj.push(newObj);
+                                ptrs.push({ obj: newObj[k], indent, parent: newObj, key: k });
+                            } else {
+                                curr.obj[k] = {};
+                                ptrs.push({ obj: curr.obj[k], indent, parent: curr.obj, key: k });
+                            }
+                        } else {
+                            if (v === '[]') {
+                                curr.obj[k] = [];
+                            } else {
+                                curr.obj[k] = parseVal(v);
+                            }
+                        }
+                    }
+                });
+
+                return finalResult;
+            }, []);
+
+            // 统一的对象解析函数
+            const parseCurrentContent = useCallback((content, format) => {
+                try {
+                    if (!content) return {};
+                    if (format === 'text') return { text: content }; // 文本格式特殊处理
+
+                    if (format === 'json') {
+                        const { parsed } = parseJsonWithComments(content);
+                        return parsed;
+                    } else if (format === 'xml') {
+                        return xmlToJson(content);
+                    } else if (format === 'ini') {
+                        return iniToJson(content);
+                    } else if (format === 'yaml') {
+                        return yamlToJson(content);
+                    } else if (format === 'toml') {
+                        return iniToJson(content); // 降级
+                    }
+                    return {};
+                } catch (e) {
+                    throw new Error(`解析 ${format} 失败: ${e.message}`);
+                }
+            }, [parseJsonWithComments, xmlToJson, iniToJson, yamlToJson]);
+
+            // 格式转换函数
+            const convertFormat = useCallback((targetFormat) => {
+                try {
+                    const currentValue = jsonEditorInstance.current?.getValue() || jsonText;
+                    const fromFormat = dataFormat;
+
+                    if (fromFormat === targetFormat) return;
+
+                    const obj = parseCurrentContent(currentValue, fromFormat);
+
+                    // 2. 将 JSON 对象转换为目标格式
+                    let result = '';
+                    switch (targetFormat) {
+                        case 'json':
+                            result = JSON.stringify(obj, null, 2);
+                            break;
+                        case 'xml':
+                            result = jsonToXml(obj);
+                            break;
+                        case 'yaml':
+                            result = jsonToYaml(obj);
+                            break;
+                        case 'toml':
+                            result = jsonToToml(obj);
+                            break;
+                        case 'ini':
+                            result = jsonToIni(obj);
+                            break;
+                        default:
+                            throw new Error(`不支持的目标格式: ${targetFormat}`);
+                    }
+
+                    if (jsonEditorInstance.current) {
+                        jsonEditorInstance.current.setValue(result);
+                        const model = jsonEditorInstance.current.getModel();
+                        if (model) {
+                            monaco.editor.setModelLanguage(model, DATA_FORMATS[targetFormat].monacoLang);
+                        }
+                    }
+                    setJsonText(result);
+                    setDataFormat(targetFormat);
+                    setError(""); // 需求1: 成功不显示提示
+
+                } catch (err) {
+                    setError(`格式转换错误: ${err.message}`);
+                }
+            }, [dataFormat, jsonText, parseCurrentContent, jsonToXml, jsonToYaml, jsonToToml, jsonToIni]);
+
+            // ========== 需求3: JSON对比功能 ==========
+            const [diffResult, setDiffResult] = useState(null);
+
+            // 初始化对比编辑器 (修复 Hook 报错：统一在 Effect 中初始化)
+            useEffect(() => {
+                if (isDiffMode) {
+                    // 初始化左侧编辑器 (原始 JSON)
+                    if (diffLeftEditorRef.current && !jsonEditorInstance.current) {
+                         // 注意：这里我们复用 jsonEditorInstance，但在对比模式下它挂载在 diffLeftEditorRef
+                         jsonEditorInstance.current = monaco.editor.create(diffLeftEditorRef.current, {
+                            value: jsonText,
+                            language: "json",
+                            theme: "vs-dark",
+                            automaticLayout: true,
+                            minimap: { enabled: true },
+                            scrollBeyondLastLine: false,
+                            fontSize: 13,
+                            lineNumbers: "on"
+                        });
+                        jsonEditorInstance.current.onDidChangeModelContent(() => {
+                            const value = jsonEditorInstance.current.getValue();
+                            setJsonText(value);
+                        });
+                    }
+
+                    // 初始化右侧编辑器 (对比 JSON)
+                    if (diffEditorRef.current && !diffEditorInstance.current) {
+                        diffEditorInstance.current = monaco.editor.create(diffEditorRef.current, {
+                            value: diffText || '// 在此输入要对比的JSON',
+                            language: "json",
+                            theme: "vs-dark",
+                            automaticLayout: true,
+                            minimap: { enabled: true },
+                            scrollBeyondLastLine: false,
+                            fontSize: 13,
+                            lineNumbers: "on"
+                        });
+                        diffEditorInstance.current.onDidChangeModelContent(() => {
+                            const value = diffEditorInstance.current.getValue();
+                            setDiffText(value);
+                        });
+                    }
+                }
+
+                // 清理逻辑交给 toggleDiffMode 或组件卸载
+            }, [isDiffMode]); // 仅在模式切换时触发
+
+            // 深度对比两个对象
+            const deepCompare = useCallback((obj1, obj2, path = '') => {
+                const differences = [];
+                const allKeys = new Set([...Object.keys(obj1 || {}), ...Object.keys(obj2 || {})]);
+                for (const key of allKeys) {
+                    const currentPath = path ? `${path}.${key}` : key;
+                    const val1 = obj1?.[key];
+                    const val2 = obj2?.[key];
+                    if (!(key in (obj1 || {}))) {
+                        differences.push({ type: 'added', path: currentPath, value: val2 });
+                    } else if (!(key in (obj2 || {}))) {
+                        differences.push({ type: 'removed', path: currentPath, value: val1 });
+                    } else if (typeof val1 !== typeof val2) {
+                        differences.push({ type: 'modified', path: currentPath, oldValue: val1, newValue: val2 });
+                    } else if (Array.isArray(val1) && Array.isArray(val2)) {
+                        if (JSON.stringify(val1) !== JSON.stringify(val2)) {
+                            differences.push({ type: 'modified', path: currentPath, oldValue: val1, newValue: val2 });
+                        }
+                    } else if (typeof val1 === 'object' && val1 !== null) {
+                        differences.push(...deepCompare(val1, val2, currentPath));
+                    } else if (val1 !== val2) {
+                        differences.push({ type: 'modified', path: currentPath, oldValue: val1, newValue: val2 });
+                    }
+                }
+                return differences;
+            }, []);
+
+            // 执行对比 (需求2：语义对比)
+            const performDiff = useCallback(() => {
+                try {
+                    const leftContent = jsonEditorInstance.current?.getValue() || jsonText;
+                    const rightContent = diffEditorInstance.current?.getValue() || diffText;
+
+                    // 分别解析为 JSON 对象
+                    const leftObj = parseCurrentContent(leftContent, leftFormat);
+                    const rightObj = parseCurrentContent(rightContent, rightFormat);
+
+                    const differences = deepCompare(leftObj, rightObj);
+
+                    const stats = {
+                        added: differences.filter(d => d.type === 'added').length,
+                        removed: differences.filter(d => d.type === 'removed').length,
+                        modified: differences.filter(d => d.type === 'modified').length
+                    };
+
+                    setDiffAnalysis({
+                        differences,
+                        stats,
+                        leftFormat,
+                        rightFormat
+                    });
+                    setError("");
+                } catch (err) {
+                    setError(`对比错误: ${err.message}`);
+                    setDiffAnalysis(null);
+                }
+            }, [jsonText, diffText, leftFormat, rightFormat, parseCurrentContent, deepCompare]);
+
+            // 辅助：格式化特定编辑器的内容
+            const formatEditorContent = useCallback((editorInstance, format, setTextFunc) => {
+                if (!editorInstance || format === 'text') return; // Text 不做操作
+                try {
+                    const content = editorInstance.getValue();
+                    const obj = parseCurrentContent(content, format);
+                    let formatted = '';
+
+                    if (format === 'json') formatted = JSON.stringify(obj, null, 2);
+                    else if (format === 'xml') formatted = jsonToXml(obj);
+                    else if (format === 'yaml') formatted = jsonToYaml(obj);
+                    else if (format === 'ini' || format === 'toml') formatted = jsonToIni(obj);
+
+                    editorInstance.setValue(formatted);
+                    if (setTextFunc) setTextFunc(formatted);
+                } catch(e) {
+                    console.error("Format error", e);
+                }
+            }, [parseCurrentContent, jsonToXml, jsonToYaml, jsonToIni]);
+
+            // 切换对比模式
+            const toggleDiffMode = useCallback(() => {
+                setIsDiffMode(prev => {
+                    const newMode = !prev;
+                    // 如果打开对比模式，关闭代码生成模式（互斥）
+                    if (newMode && isCodeGenMode) {
+                        setIsCodeGenMode(false);
+                    }
+
+                    // 切换模式时，清理编辑器实例
+                    if (jsonEditorInstance.current) {
+                        jsonEditorInstance.current.dispose();
+                        jsonEditorInstance.current = null;
+                    }
+                    if (diffEditorInstance.current) {
+                        diffEditorInstance.current.dispose();
+                        diffEditorInstance.current = null;
+                    }
+                    if (codeEditorInstance.current) {
+                        codeEditorInstance.current.dispose();
+                        codeEditorInstance.current = null;
+                    }
+
+                    return newMode;
+                });
+
+                setDiffAnalysis(null);
+            }, [isCodeGenMode]);
+
+            // 容错的软格式化函数（用于无法解析的 JSON）
+            const softFormatJson = (text) => {
+                let formatted = '';
+                let indentLevel = 0;
+                const indentStr = '  ';
+                let inString = false;
+                let isEscaped = false;
+
+                for (let i = 0; i < text.length; i++) {
+                    const char = text[i];
+
+                    if (inString) {
+                        if (char === '\\') isEscaped = !isEscaped;
+                        else if (char === '"' && !isEscaped) inString = false;
+                        formatted += char;
+                        continue;
+                    }
+
+                    if (char === '"') {
+                        inString = true;
+                        formatted += char;
+                        continue;
+                    }
+
+                    if (char === '{' || char === '[') {
+                        formatted += char + '\n' + indentStr.repeat(++indentLevel);
+                    } else if (char === '}' || char === ']') {
+                        formatted += '\n' + indentStr.repeat(--indentLevel) + char;
+                    } else if (char === ',') {
+                        formatted += char + '\n' + indentStr.repeat(indentLevel);
+                    } else if (char === ':') {
+                         formatted += ': ';
+                    } else if (/\s/.test(char)) {
+                        // 忽略非字符串内的空白，我们自己控制缩进
+                    } else {
+                        formatted += char;
+                    }
+                }
+                return formatted;
+            };
+
             // 改进的格式化函数：智能修复并格式化JSON
             const formatJsonIntelligently = useCallback(() => {
                 try {
                     const jsonValue = jsonEditorInstance.current?.getValue() || jsonText;
-                    const errors = [];
 
-                    // 尝试直接格式化
+                    // 0. 预处理：替换中文标点 (始终执行)
+                    let fixed = jsonValue
+                        .replace(/[。；]/g, ',') // 句号分号变逗号
+                        .replace(/，/g, ',')     // 中文逗号
+                        .replace(/“|”/g, '"');   // 中文引号
+
+                    // 1. 尝试直接 Parse
                     try {
-                        const { parsed: obj } = parseJsonWithComments(jsonValue);
-                        const formatted = JSON.stringify(obj, null, 2);
-                        if (jsonEditorInstance.current) {
-                            jsonEditorInstance.current.setValue(formatted);
-                        }
-                        setJsonText(formatted);
-                        setError("");
-                        setFormatErrors([]);
-                        setJsonStats(prev => ({ ...prev, errorLines: 0 }));
-                        return;
-                    } catch (fullError) {
-                        console.log('标准格式化失败，尝试智能修复');
-                    }
-
-                    // 智能修复JSON
-                    const lines = jsonValue.split('\n');
-                    let fixedJson = '';
-                    let lineNumber = 1;
-                    let inString = false;
-                    let escapeNext = false;
-                    let braceStack = [];
-                    let lastValidIndex = 0;
-                    let isValidSoFar = true;
-
-                    // 尝试逐部分解析
-                    const validParts = [];
-                    let currentPart = '';
-
-                    for (let i = 0; i < jsonValue.length; i++) {
-                        const char = jsonValue[i];
-
-                        if (!escapeNext && char === '\\') {
-                            escapeNext = true;
-                            currentPart += char;
-                        } else if (!escapeNext && char === '"') {
-                            inString = !inString;
-                            currentPart += char;
-                        } else if (!inString) {
-                            if (char === '{' || char === '[') {
-                                braceStack.push(char);
-                                currentPart += char;
-                            } else if (char === '}' || char === ']') {
-                                if (braceStack.length > 0) {
-                                    const lastBrace = braceStack.pop();
-                                    if ((char === '}' && lastBrace === '{') || (char === ']' && lastBrace === '[')) {
-                                        currentPart += char;
-                                    } else {
-                                        // 括号不匹配，停止当前部分
-                                        errors.push({
-                                            line: lineNumber,
-                                            index: i,
-                                            error: `括号不匹配: 期望 ${lastBrace === '{' ? '}' : ']'}, 但找到 ${char}`
-                                        });
-                                        isValidSoFar = false;
-                                    }
-                                } else {
-                                    errors.push({
-                                        line: lineNumber,
-                                        index: i,
-                                        error: `多余的 ${char} 括号`
-                                    });
-                                }
-                            } else if (char === ',') {
-                                currentPart += char;
-                                // 尝试验证当前部分
-                                try {
-                                    JSON.parse('{' + currentPart + '}');
-                                    validParts.push(currentPart);
-                                    currentPart = '';
-                                } catch (e) {
-                                    // 继续累积
-                                }
-                            } else if (char === '\n') {
-                                lineNumber++;
-                                currentPart += char;
-                            } else {
-                                currentPart += char;
-                            }
-                        } else {
-                            currentPart += char;
-                        }
-
-                        escapeNext = false;
-
-                        // 尝试解析累积的部分
-                        if (!inString && braceStack.length === 0 && currentPart.trim()) {
-                            try {
-                                const testStr = currentPart;
-                                // 尝试包装成对象来验证
-                                if (testStr.startsWith('{') || testStr.startsWith('[')) {
-                                    JSON.parse(testStr);
-                                    validParts.push(testStr);
-                                    currentPart = '';
-                                } else {
-                                    JSON.parse('{' + testStr + '}');
-                                    validParts.push(testStr);
-                                    currentPart = '';
-                                }
-                            } catch (e) {
-                                // 继续累积
-                            }
-                        }
-                    }
-
-                    // 处理最后的部分
-                    if (currentPart.trim()) {
-                        try {
-                            JSON.parse(currentPart);
-                            validParts.push(currentPart);
-                        } catch (e) {
-                            // 尝试修复
-                            if (braceStack.length > 0) {
-                                // 添加缺失的括号
-                                while (braceStack.length > 0) {
-                                    const missing = braceStack.pop();
-                                    currentPart += missing === '{' ? '}' : ']';
-                                }
-                                try {
-                                    JSON.parse(currentPart);
-                                    validParts.push(currentPart);
-                                } catch (e2) {
-                                    errors.push({
-                                        line: lineNumber,
-                                        index: jsonValue.length - 1,
-                                        error: '无法修复的JSON片段'
-                                    });
-                                }
-                            }
-                        }
-                    }
-
-                    // 构建修复后的JSON
-                    let fixed = validParts.join(',');
-
-                    // 尝试格式化修复后的JSON
-                    try {
-                        const parsed = JSON.parse(fixed);
+                        const cleanedValue = fixed.replace(/\/\/.*$/gm, ''); // 去注释
+                        const parsed = JSON.parse(cleanedValue);
                         const formatted = JSON.stringify(parsed, null, 2);
-
-                        if (jsonEditorInstance.current) {
-                            jsonEditorInstance.current.setValue(formatted);
-                        }
+                        if (jsonEditorInstance.current) jsonEditorInstance.current.setValue(formatted);
                         setJsonText(formatted);
-
-                        // 在编辑器中标记错误行
-                        if (jsonEditorInstance.current && errors.length > 0) {
-                            const model = jsonEditorInstance.current.getModel();
-                            if (model) {
-                                // 清除之前的装饰
-                                const oldDecorations = jsonEditorInstance.current.getModel().getAllDecorations();
-                                const oldErrorDecorations = oldDecorations.filter(d =>
-                                    d.options.className === 'error-line' ||
-                                    d.options.glyphMarginClassName === 'error-gutter'
-                                ).map(d => d.id);
-
-                                if (oldErrorDecorations.length > 0) {
-                                    jsonEditorInstance.current.deltaDecorations(oldErrorDecorations, []);
-                                }
-
-                                // 添加新的错误标记（基于原始行号）
-                                const newDecorations = errors.map(error => ({
-                                    range: new monaco.Range(error.line, 1, error.line, 1),
-                                    options: {
-                                        isWholeLine: true,
-                                        className: 'error-line',
-                                        glyphMarginClassName: 'error-gutter',
-                                        glyphMarginHoverMessage: { value: `第 ${error.line} 行: ${error.error}` }
-                                    }
-                                }));
-
-                                jsonEditorInstance.current.deltaDecorations([], newDecorations);
-                            }
-                        }
-
-                        if (errors.length > 0) {
-                            const errorMsg = `JSON格式有误，已修复并格式化。修复了 ${errors.length} 处错误`;
-                            setError(errorMsg);
-                            setFormatErrors(errors);
-                            setJsonStats(prev => ({ ...prev, errorLines: errors.length }));
-                        } else {
-                            setError("");
-                            setFormatErrors([]);
-                            setJsonStats(prev => ({ ...prev, errorLines: 0 }));
-                        }
-                    } catch (finalError) {
-                        setError(`无法修复JSON: ${finalError.message}`);
-                        setFormatErrors(errors);
+                        setError(""); // 需求1: 成功不显示提示
+                        setFormatErrors([]);
+                        return;
+                    } catch (e) {
+                        // Parse 失败
                     }
+
+                    // 2. 尝试修复双冒号 "key":"val":"val" -> "key": "val:val" (仅作猜测修复，不保证正确)
+                    // 用户用例: "query_type":"formula":"OC1..."
+                    // 这种结构如果不转义第二个冒号，根本无法 Parse。
+                    // 策略：使用软格式化来展示
+
+                    const softFormatted = softFormatJson(fixed);
+                    if (jsonEditorInstance.current) jsonEditorInstance.current.setValue(softFormatted);
+                    setJsonText(softFormatted);
+                    setError("JSON存在语法错误，已执行视觉格式化 (Soft Format)");
+                    setFormatErrors([]);
 
                 } catch (err) {
                     setError(`格式化错误: ${err.message}`);
-                    setFormatErrors([]);
                 }
-            }, [jsonText, parseJsonWithComments]);
+            }, [jsonText]);
 
             // 需求3：中文转Unicode功能
             const convertChineseToUnicode = useCallback(() => {
@@ -1738,8 +2438,17 @@
                 setGenerationInfo(null);
 
                 try {
-                    const jsonValue = jsonEditorInstance.current?.getValue() || jsonText;
-                    const { parsed: obj, comments } = parseJsonWithComments(jsonValue);
+                    const content = jsonEditorInstance.current?.getValue() || jsonText;
+                    // 根据当前格式解析为对象
+                    const obj = parseCurrentContent(content, dataFormat);
+
+                    // 注释只在 JSON 模式下尝试提取
+                    let comments = null;
+                    if (dataFormat === 'json') {
+                         try {
+                             comments = parseJsonWithComments(content).comments;
+                         } catch (e) {}
+                    }
 
                     const timeFieldsCount = detectTime ? detectTimeFields(obj) : 0;
                     setTimeFieldsDetected(timeFieldsCount);
@@ -1782,10 +2491,10 @@
                     setCodeStats({ lines, chars });
 
                 } catch (err) {
-                    const errorMsg = `JSON解析错误: ${err.message}`;
+                    const errorMsg = `数据解析错误: ${err.message}`;
                     setError(errorMsg);
 
-                    const errorCode = `// ${errorMsg}\n// 请检查JSON格式是否正确`;
+                    const errorCode = `// ${errorMsg}\n// 请检查输入格式是否正确`;
                     setGeneratedCode(errorCode);
 
                     if (codeEditorInstance.current) {
@@ -1802,11 +2511,30 @@
                 } finally {
                     setIsGenerating(false);
                 }
-            }, [lang, goTags, structName, inlineStruct, detectTime, jsonText, mergeArrayFields, detectTimeFields, includeComments, caseFormat, parseJsonWithComments, collectGenerationInfo, processObject]);
+            }, [lang, goTags, structName, inlineStruct, detectTime, jsonText, dataFormat, mergeArrayFields, detectTimeFields, includeComments, caseFormat, parseCurrentContent, collectGenerationInfo, processObject]);
 
-            // JSON格式化函数（使用智能格式化）
+            // 通用格式化函数
             const formatJson = () => {
-                formatJsonIntelligently();
+                if (dataFormat === 'json') {
+                    formatJsonIntelligently();
+                } else {
+                    // 其他格式，通过 parse -> stringify 循环来格式化
+                    // 或者 XML 有自己的格式化逻辑？目前先利用转换逻辑
+                    try {
+                        const content = jsonEditorInstance.current?.getValue() || jsonText;
+                        const obj = parseCurrentContent(content, dataFormat);
+                        let formatted = '';
+                        if (dataFormat === 'xml') formatted = jsonToXml(obj);
+                        else if (dataFormat === 'yaml') formatted = jsonToYaml(obj);
+                        else if (dataFormat === 'ini' || dataFormat === 'toml') formatted = jsonToIni(obj);
+
+                        if (jsonEditorInstance.current) jsonEditorInstance.current.setValue(formatted);
+                        setJsonText(formatted);
+                        setError(""); // 需求1: 成功不显示提示
+                    } catch (e) {
+                         setError(`格式化失败: ${e.message}`);
+                    }
+                }
             };
 
             const minifyJson = () => {
@@ -1981,6 +2709,16 @@
             const toggleCodeGenMode = () => {
                 const newMode = !isCodeGenMode;
                 setIsCodeGenMode(newMode);
+                // 互斥：打开代码生成，关闭对比
+                if (newMode && isDiffMode) {
+                    setIsDiffMode(false);
+                    setDiffResult(null);
+                    // 清理 Diff 编辑器
+                    if (diffEditorInstance.current) {
+                        diffEditorInstance.current.dispose();
+                        diffEditorInstance.current = null;
+                    }
+                }
 
                 // 当重新打开代码生成模式时，确保代码编辑器内容是最新的
                 if (newMode && generatedCode && codeEditorInstance.current) {
@@ -2033,132 +2771,150 @@
 
                 React.createElement("div", { className: "config-panel" },
                     React.createElement("div", { className: "config-content" },
+                        // 需求 2: 对比模式下隐藏大部分按钮，只留对比开关 (以及可能的执行对比)
+                        // 需求 1: 不同格式显示不同按钮
+
                         React.createElement("div", { className: "action-buttons compact-actions" },
-                            React.createElement("div", { className: "mode-switch-inline" },
+                            // 对比模式下只显示对比相关的
+                            isDiffMode ? (
+                                React.createElement(React.Fragment, null,
+                                    React.createElement("button", {
+                                            className: "btn btn-primary btn-compact",
+                                            onClick: performDiff,
+                                            title: "执行JSON对比"
+                                        },
+                                        React.createElement("i", { className: "fas fa-code-compare" }),
+                                        "执行对比"
+                                    )
+                                )
+                            ) : (
+                                React.createElement(React.Fragment, null,
+                                    // 代码生成开关 (非对比模式下显示)
+                                    React.createElement("div", { className: "mode-switch-inline" },
+                                        React.createElement("label", { className: "switch" },
+                                            React.createElement("input", {
+                                                type: "checkbox",
+                                                checked: isCodeGenMode,
+                                                onChange: toggleCodeGenMode
+                                            }),
+                                            React.createElement("span", { className: "slider" })
+                                        ),
+                                        React.createElement("span", { className: "switch-label" },
+                                            "代码生成"
+                                        )
+                                    ),
+
+                                    // 仅在 JSON 模式下显示完整工具栏
+                                    dataFormat === 'json' ? (
+                                        React.createElement(React.Fragment, null,
+                                            React.createElement("button", {
+                                                className: "btn btn-secondary btn-compact",
+                                                onClick: formatJson,
+                                                title: "智能格式化"
+                                            }, React.createElement("i", { className: "fas fa-indent" }), "格式化"),
+                                            React.createElement("button", {
+                                                className: "btn btn-secondary btn-compact",
+                                                onClick: removeComments,
+                                                title: "移除注释"
+                                            }, React.createElement("i", { className: "fas fa-comment-slash" }), "去注释"),
+                                            React.createElement("button", {
+                                                className: "btn btn-secondary btn-compact",
+                                                onClick: minifyJson,
+                                                title: "压缩"
+                                            }, React.createElement("i", { className: "fas fa-compress" }), "压缩"),
+                                            React.createElement("button", {
+                                                className: "btn btn-secondary btn-compact",
+                                                onClick: escapeJson,
+                                                title: "转义"
+                                            }, React.createElement("i", { className: "fas fa-code" }), "转义"),
+                                            React.createElement("button", {
+                                                className: "btn btn-secondary btn-compact",
+                                                onClick: unescapeJson,
+                                                title: "去转义"
+                                            }, React.createElement("i", { className: "fas fa-code" }), "去转义"),
+                                            React.createElement("button", {
+                                                className: "btn btn-secondary btn-compact",
+                                                onClick: convertChineseToUnicode,
+                                                title: "中文→Unicode"
+                                            }, React.createElement("i", { className: "fas fa-language" }), "中文→Uni"),
+                                            React.createElement("button", {
+                                                className: "btn btn-secondary btn-compact",
+                                                onClick: convertUnicodeToChinese,
+                                                title: "Unicode→中文"
+                                            }, React.createElement("i", { className: "fas fa-language" }), "Uni→中文"),
+                                            React.createElement("button", {
+                                                className: "btn btn-secondary btn-compact",
+                                                onClick: loadComplexJson,
+                                                title: "复杂示例"
+                                            }, React.createElement("i", { className: "fas fa-cogs" }), "复杂示例"),
+                                            React.createElement("button", {
+                                                className: "btn btn-secondary btn-compact",
+                                                onClick: clearAll,
+                                                title: "清空"
+                                            }, React.createElement("i", { className: "fas fa-trash" }), "清空")
+                                        )
+                                    ) : (
+                                        // 其他模式只显示 格式化、清空
+                                        React.createElement(React.Fragment, null,
+                                            React.createElement("button", {
+                                                className: "btn btn-secondary btn-compact",
+                                                onClick: formatJson,
+                                                title: "格式化"
+                                            }, React.createElement("i", { className: "fas fa-indent" }), "格式化"),
+                                            React.createElement("button", {
+                                                className: "btn btn-secondary btn-compact",
+                                                onClick: clearAll,
+                                                title: "清空"
+                                            }, React.createElement("i", { className: "fas fa-trash" }), "清空")
+                                        )
+                                    ),
+
+                                    // 代码生成按钮 (在开启代码生成且非对比模式下)
+                                    isCodeGenMode && React.createElement("button", {
+                                            className: "btn btn-primary btn-compact",
+                                            onClick: generateCode,
+                                            disabled: isGenerating,
+                                            title: "生成代码"
+                                        },
+                                        isGenerating ? "生成中..." : "生成代码"
+                                    )
+                                )
+                            ),
+
+                            // 对比模式开关 (始终显示或在右侧)
+                            React.createElement("div", { className: "mode-switch-inline", style: { marginLeft: "auto" } },
                                 React.createElement("label", { className: "switch" },
                                     React.createElement("input", {
                                         type: "checkbox",
-                                        checked: isCodeGenMode,
-                                        onChange: toggleCodeGenMode
+                                        checked: isDiffMode,
+                                        onChange: toggleDiffMode
                                     }),
                                     React.createElement("span", { className: "slider" })
                                 ),
                                 React.createElement("span", { className: "switch-label" },
-                                    "代码生成"
+                                    "对比模式"
                                 )
-                            ),
-
-                            React.createElement("button", {
-                                    className: "btn btn-secondary btn-compact",
-                                    onClick: formatJson,
-                                    title: "智能格式化JSON（自动修复错误）"
-                                },
-                                React.createElement("i", { className: "fas fa-indent" }),
-                                "格式化"
-                            ),
-                            React.createElement("button", {
-                                    className: "btn btn-secondary btn-compact",
-                                    onClick: removeComments,
-                                    title: "移除注释"
-                                },
-                                React.createElement("i", { className: "fas fa-comment-slash" }),
-                                "去注释"
-                            ),
-                            React.createElement("button", {
-                                    className: "btn btn-secondary btn-compact",
-                                    onClick: minifyJson,
-                                    title: "压缩JSON"
-                                },
-                                React.createElement("i", { className: "fas fa-compress" }),
-                                "压缩"
-                            ),
-                            React.createElement("button", {
-                                    className: "btn btn-secondary btn-compact",
-                                    onClick: escapeJson,
-                                    title: "转义JSON"
-                                },
-                                React.createElement("i", { className: "fas fa-code" }),
-                                "转义"
-                            ),
-                            React.createElement("button", {
-                                    className: "btn btn-secondary btn-compact",
-                                    onClick: unescapeJson,
-                                    title: "去转义JSON"
-                                },
-                                React.createElement("i", { className: "fas fa-code" }),
-                                "去转义"
-                            ),
-                            // 需求3：新增中文转Unicode功能
-                            React.createElement("button", {
-                                    className: "btn btn-secondary btn-compact",
-                                    onClick: convertChineseToUnicode,
-                                    title: "中文转Unicode编码"
-                                },
-                                React.createElement("i", { className: "fas fa-language" }),
-                                "中文→Unicode"
-                            ),
-                            // 需求3：新增Unicode转中文功能
-                            React.createElement("button", {
-                                    className: "btn btn-secondary btn-compact",
-                                    onClick: convertUnicodeToChinese,
-                                    title: "Unicode编码转中文"
-                                },
-                                React.createElement("i", { className: "fas fa-language" }),
-                                "Unicode→中文"
-                            ),
-                            React.createElement("button", {
-                                    className: "btn btn-secondary btn-compact",
-                                    onClick: loadComplexJson,
-                                    title: "加载复杂JSON示例（测试数组合并）"
-                                },
-                                React.createElement("i", { className: "fas fa-cogs" }),
-                                "复杂示例"
-                            ),
-                            // 需求1：清空按钮放复杂示例后面
-                            React.createElement("button", {
-                                    className: "btn btn-secondary btn-compact",
-                                    onClick: clearAll,
-                                    title: "清空JSON编辑器和代码编辑器"
-                                },
-                                React.createElement("i", { className: "fas fa-trash" }),
-                                "清空"
-                            ),
-                            isCodeGenMode && React.createElement("button", {
-                                    className: "btn btn-primary btn-compact",
-                                    onClick: generateCode,
-                                    disabled: isGenerating,
-                                    title: "生成代码"
-                                },
-                                isGenerating
-                                    ? React.createElement(React.Fragment, null,
-                                        React.createElement("i", { className: "fas fa-spinner fa-spin" }),
-                                        "生成中..."
-                                    )
-                                    : React.createElement(React.Fragment, null,
-                                        React.createElement("i", { className: "fas fa-bolt" }),
-                                        "生成代码"
-                                    )
                             )
                         ),
 
-                        isCodeGenMode && React.createElement("div", { className: "config-row code-gen-config" },
-                            React.createElement("div", { className: "config-group compact-group" },
-                                React.createElement("label", { htmlFor: "language-select" }, "目标语言"),
-                                React.createElement("div", { className: "language-select" },
-                                    React.createElement("select", {
-                                            id: "language-select",
-                                            value: lang,
-                                            onChange: (e) => setLang(e.target.value),
-                                            className: "compact-select"
-                                        },
-                                        Object.entries(LANGUAGE_CONFIG).map(([value, config]) =>
-                                            React.createElement("option", { key: value, value: value },
-                                                `${config.icon} ${config.name}`
-                                            )
-                                        )
-                                    )
+            isCodeGenMode && React.createElement("div", { className: "config-row code-gen-config" },
+                React.createElement("div", { className: "config-group compact-group" },
+                    React.createElement("label", { htmlFor: "language-select" }, "目标语言"),
+                    React.createElement("div", { className: "language-select" },
+                        React.createElement("select", {
+                                id: "language-select",
+                                value: lang,
+                                onChange: (e) => setLang(e.target.value),
+                                className: "compact-select"
+                            },
+                            Object.entries(LANGUAGE_CONFIG).map(([value, config]) =>
+                                React.createElement("option", { key: value, value: value },
+                                    `${config.icon} ${config.name}`
                                 )
-                            ),
+                            )
+                        )
+                    )
+                ),
 
                             React.createElement("div", { className: "config-group compact-group" },
                                 React.createElement("label", { htmlFor: "struct-name" }, "结构体名"),
@@ -2334,13 +3090,34 @@
                 ),
 
                 React.createElement("div", { className: "editor-panels" },
-                    React.createElement("div", {
+                    !isDiffMode && React.createElement("div", {
                             className: `panel ${isCodeGenMode ? 'json-panel partial-width' : 'json-panel full-width'}`
                         },
                         React.createElement("div", { className: "panel-header" },
-                            React.createElement("div", { className: "panel-title" },
-                                React.createElement("i", { className: "fas fa-code" }),
-                                "JSON 输入"
+                            React.createElement("div", { className: "panel-header-content" },
+                                React.createElement("div", { className: "panel-title" },
+                                    React.createElement("i", { className: "fas fa-code" }),
+                                    DATA_FORMATS[dataFormat].name + " 输入"
+                                ),
+                                // 需求2：格式转换功能嵌入header栏 - 选择目标格式自动转换
+                                React.createElement("div", { className: "header-conversion-tools" },
+                                    React.createElement("span", { style: { fontSize: "12px", color: "#94a3b8", marginRight: "4px" } }, "转换为:"),
+                                    React.createElement("select", {
+                                        className: "format-select compact-select",
+                                        value: dataFormat,
+                                        onChange: (e) => convertFormat(e.target.value),
+                                        title: "选择目标格式自动转换"
+                                    },
+                                        // 需求1：非对比模式下过滤 text 类型
+                                        Object.entries(DATA_FORMATS)
+                                            .filter(([val]) => val !== 'text')
+                                            .map(([value, config]) =>
+                                                React.createElement("option", { key: value, value: value },
+                                                    config.name
+                                                )
+                                            )
+                                    )
+                                )
                             ),
                             React.createElement("div", { className: "json-tools" },
                                 React.createElement("div", { className: "panel-stats" },
@@ -2363,7 +3140,7 @@
                     ),
 
                     // 修复：始终渲染代码面板，用CSS控制显示
-                    React.createElement("div", {
+                    !isDiffMode && React.createElement("div", {
                             className: `panel code-panel ${isCodeGenMode ? '' : 'hidden'}`
                         },
                         React.createElement("div", { className: "panel-header" },
@@ -2381,13 +3158,144 @@
                             ref: codeEditorRef,
                             className: "panel-content"
                         })
+                    ),
+
+                    // 需求2：对比模式布局 (左35% - 中30% - 右35%)
+                    isDiffMode && React.createElement("div", { className: "diff-layout", style: { width: '100%' } },
+
+                        // 左侧编辑器 (35%)
+                        React.createElement("div", { className: "diff-side", style: { flex: '0 0 35%', maxWidth: '35%', width: '35%' } },
+                            // 左侧 Header
+                            React.createElement("div", { className: "diff-header" },
+                                React.createElement("div", { className: "diff-title" },
+                                    React.createElement("select", {
+                                            className: "format-select compact-select",
+                                            value: leftFormat,
+                                            onChange: (e) => {
+                                                setLeftFormat(e.target.value);
+                                                if (jsonEditorInstance.current) {
+                                                    const model = jsonEditorInstance.current.getModel();
+                                                    if (model) monaco.editor.setModelLanguage(model, DATA_FORMATS[e.target.value].monacoLang);
+                                                }
+                                            },
+                                            style: { marginRight: '8px' }
+                                        },
+                                        Object.entries(DATA_FORMATS).map(([val, conf]) =>
+                                            React.createElement("option", { key: val, value: val }, conf.name)
+                                        )
+                                    ),
+                                    "原始文本"
+                                ),
+                                React.createElement("div", { className: "header-conversion-tools" },
+                                    leftFormat !== 'text' && React.createElement("button", {
+                                        className: "btn btn-secondary btn-sm",
+                                        onClick: () => formatEditorContent(jsonEditorInstance.current, leftFormat, setJsonText),
+                                        title: "格式化"
+                                    }, React.createElement("i", { className: "fas fa-indent" })),
+                                    React.createElement("button", {
+                                        className: "btn btn-secondary btn-sm",
+                                        onClick: () => {
+                                            if (jsonEditorInstance.current) jsonEditorInstance.current.setValue('');
+                                            setJsonText('');
+                                        },
+                                        title: "清空"
+                                    }, React.createElement("i", { className: "fas fa-trash" }))
+                                )
+                            ),
+                            React.createElement("div", {
+                                ref: diffLeftEditorRef,
+                                className: "diff-content"
+                            })
+                        ),
+
+                        // 中间差异信息框 (30%) - 终端样式
+                        React.createElement("div", { className: "diff-info-panel", style: { flex: '0 0 30%', maxWidth: '30%', width: '30%' } },
+                             React.createElement("div", { className: "terminal-header" },
+                                React.createElement("div", { className: "terminal-dot", style: { background: '#ef4444' } }),
+                                React.createElement("div", { className: "terminal-dot", style: { background: '#eab308' } }),
+                                React.createElement("div", { className: "terminal-dot", style: { background: '#22c55e' } }),
+                                React.createElement("span", { style: { marginLeft: '10px' } }, "Diff Analysis Terminal")
+                             ),
+                             React.createElement("div", { className: "terminal-content" },
+                                 !diffAnalysis ?
+                                    React.createElement("div", { style: { color: '#64748b' } },
+                                        "> 等待执行对比...\n> 请点击上方 '执行对比' 按钮"
+                                    ) :
+                                    React.createElement(React.Fragment, null,
+                                        React.createElement("div", { style: { marginBottom: '10px', borderBottom: '1px dashed #334155', paddingBottom: '10px' } },
+                                            React.createElement("div", null, `> 原始格式: ${DATA_FORMATS[diffAnalysis.leftFormat].name}`),
+                                            React.createElement("div", null, `> 目标格式: ${DATA_FORMATS[diffAnalysis.rightFormat].name}`),
+                                            React.createElement("div", null, `> 差异统计: +${diffAnalysis.stats.added} / -${diffAnalysis.stats.removed} / ~${diffAnalysis.stats.modified}`)
+                                        ),
+                                        diffAnalysis.differences.length === 0 ?
+                                            React.createElement("div", { style: { color: '#22c55e' } }, "> √ 两份数据在语义上完全一致") :
+                                            diffAnalysis.differences.map((diff, i) =>
+                                                React.createElement("div", { key: i, style: { marginBottom: '8px', fontFamily: 'monospace' } },
+                                                    React.createElement("div", { style: { color: '#94a3b8' } }, `PATH: ${diff.path || '(root)'}`),
+                                                    (diff.type === 'removed' || diff.type === 'modified') &&
+                                                        React.createElement("div", { style: { color: '#ef4444' } }, `- ${JSON.stringify(diff.oldValue !== undefined ? diff.oldValue : diff.value)}`),
+                                                    (diff.type === 'added' || diff.type === 'modified') &&
+                                                        React.createElement("div", { style: { color: '#22c55e' } }, `+ ${JSON.stringify(diff.newValue !== undefined ? diff.newValue : diff.value)}`)
+                                                )
+                                            )
+                                    )
+                             )
+                        ),
+
+                        // 右侧编辑器 (35%)
+                        React.createElement("div", { className: "diff-side", style: { flex: '0 0 35%', maxWidth: '35%', width: '35%' } },
+                            // 右侧 Header
+                            React.createElement("div", { className: "diff-header" },
+                                React.createElement("div", { className: "diff-title" },
+                                    React.createElement("select", {
+                                            className: "format-select compact-select",
+                                            value: rightFormat,
+                                            onChange: (e) => {
+                                                setRightFormat(e.target.value);
+                                                if (diffEditorInstance.current) {
+                                                    const model = diffEditorInstance.current.getModel();
+                                                    if (model) monaco.editor.setModelLanguage(model, DATA_FORMATS[e.target.value].monacoLang);
+                                                }
+                                            },
+                                            style: { marginRight: '8px' }
+                                        },
+                                        Object.entries(DATA_FORMATS).map(([val, conf]) =>
+                                            React.createElement("option", { key: val, value: val }, conf.name)
+                                        )
+                                    ),
+                                    "对比文本"
+                                ),
+                                React.createElement("div", { className: "header-conversion-tools" },
+                                    rightFormat !== 'text' && React.createElement("button", {
+                                        className: "btn btn-secondary btn-sm",
+                                        onClick: () => formatEditorContent(diffEditorInstance.current, rightFormat, setDiffText),
+                                        title: "格式化"
+                                    }, React.createElement("i", { className: "fas fa-indent" })),
+                                    React.createElement("button", {
+                                        className: "btn btn-secondary btn-sm",
+                                        onClick: () => {
+                                            if (diffEditorInstance.current) diffEditorInstance.current.setValue('');
+                                            setDiffText('');
+                                        },
+                                        title: "清空"
+                                    }, React.createElement("i", { className: "fas fa-trash" }))
+                                )
+                            ),
+                            React.createElement("div", {
+                                ref: diffEditorRef,
+                                className: "diff-content"
+                            })
+                        )
                     )
                 ),
 
                 isCodeGenMode && React.createElement("div", { className: "status-bar" },
                     React.createElement("div", { className: "status-item" },
                         React.createElement("div", { className: "language-badge" },
-                            React.createElement("i", { className: "fas fa-code" }),
+                            // 判断是 Emoji 还是 FontAwesome 类名
+                            LANGUAGE_CONFIG[lang].icon.startsWith('fa')
+                                ? React.createElement("i", { className: LANGUAGE_CONFIG[lang].icon })
+                                : React.createElement("span", { style: { marginRight: '6px' } }, LANGUAGE_CONFIG[lang].icon),
                             LANGUAGE_CONFIG[lang].name
                         ),
                         React.createElement("span", {
@@ -2447,14 +3355,14 @@
                         React.createElement("button", {
                                 className: "btn btn-secondary btn-sm",
                                 onClick: downloadCode,
-                                disabled: !generatedCode
+                                disabled: !generatedCode,
                             },
                             React.createElement("i", { className: "fas fa-download" }),
                             "下载"
                         )
                     )
                 )
-            );
+            )
         }
 
         // ============= 修复的辅助函数 =============
