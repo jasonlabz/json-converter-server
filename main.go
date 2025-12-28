@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,7 +11,11 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/gin-gonic/gin"
+	"github.com/jasonlabz/potato/ginmetrics"
+
 	"github.com/jasonlabz/json-converter-server/bootstrap"
+	"github.com/jasonlabz/json-converter-server/server/routers"
 )
 
 // @title		    TODO: ***********服务
@@ -25,18 +30,88 @@ func main() {
 	// context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
 	// bootstrap init
 	bootstrap.MustInit(ctx)
 
+	// gin mode
+	serverMode := gin.ReleaseMode
 	serverConfig := bootstrap.GetConfig()
+	if serverConfig.IsDebugMode() {
+		serverMode = gin.DebugMode
+	}
+	gin.SetMode(serverMode)
 
-	startFileServer(serverConfig)
+	r := routers.InitApiRouter()
 
+	prometheusConf := serverConfig.GetPrometheusConfig()
+	if prometheusConf.Enable {
+		// get global Monitor object
+		m := ginmetrics.GetMonitor()
+
+		// +optional set metric path, default /debug/metrics
+		m.SetMetricPath(prometheusConf.Path)
+		// +optional set slow time, default 5s
+		m.SetSlowTime(10)
+		// +optional set request duration, default {0.1, 0.3, 1.2, 5, 10}
+		// used to p95, p99
+		m.SetDuration([]float64{0.1, 0.3, 1.2, 5, 10})
+
+		// set middleware for gin
+		m.Use(r)
+	}
+
+	pprofConf := serverConfig.GetPProfConfig()
+	if pprofConf.Enable {
+		r.GET("/debug/pprof/*any", gin.WrapH(http.DefaultServeMux))
+
+		go func() {
+			if err := http.ListenAndServe(fmt.Sprintf(":%d", pprofConf.Port), nil); err != nil {
+				log.Fatalf("pprof server failed: %v", err)
+			}
+		}()
+	}
+
+	go func() {
+		fileServer(serverConfig)
+	}()
+
+	// start program
+	srv := startServer(r, serverConfig)
+
+	// receive quit signal, ready to exit
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	<-quit
+	log.Println("Shutdown Server ...")
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
 	log.Println("Server exiting")
 }
 
-// startFileServer 文件服务
-func startFileServer(c *bootstrap.Config) {
+// startServer 自定义http配置
+func startServer(router *gin.Engine, c *bootstrap.Config) *http.Server {
+	srv := &http.Server{
+		Addr:         fmt.Sprintf(":%d", c.GetHTTPPort()),
+		Handler:      router,
+		ReadTimeout:  c.GetHTTPReadTimeout(),
+		WriteTimeout: c.GetHTTPWriteTimeout(),
+	}
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	return srv
+}
+
+// fileServer 文件服务
+func fileServer(c *bootstrap.Config) {
 	config := c.GetServerConfig().Static
 	// 创建 HTTP 服务器
 	if config.Path == "" {
