@@ -1227,11 +1227,16 @@
             const [rightFormat, setRightFormat] = useState("json");
             // 新增：对比结果
             const [diffAnalysis, setDiffAnalysis] = useState(null);
+            // 新增：对比视图模式 ('split' | 'git')
+            const [diffViewMode, setDiffViewMode] = useState("split");
 
             const diffEditorRef = useRef(null);
             const diffEditorInstance = useRef(null);
             // 修复 Hook 报错：新增左侧编辑器 Ref
             const diffLeftEditorRef = useRef(null);
+            // 新增：Git Diff 编辑器 Ref
+            const gitDiffContainerRef = useRef(null);
+            const gitDiffEditorInstance = useRef(null);
 
             const [lang, setLang] = useState("go");
             const [goTags, setGoTags] = useState({
@@ -2004,49 +2009,160 @@
             // ========== 需求3: JSON对比功能 ==========
             const [diffResult, setDiffResult] = useState(null);
 
-            // 初始化对比编辑器 (修复 Hook 报错：统一在 Effect 中初始化)
+            // 初始化对比编辑器
             useEffect(() => {
                 if (isDiffMode) {
-                    // 初始化左侧编辑器 (原始 JSON)
-                    if (diffLeftEditorRef.current && !jsonEditorInstance.current) {
-                         // 注意：这里我们复用 jsonEditorInstance，但在对比模式下它挂载在 diffLeftEditorRef
-                         jsonEditorInstance.current = monaco.editor.create(diffLeftEditorRef.current, {
-                            value: jsonText,
-                            language: "json",
-                            theme: "vs-dark",
-                            automaticLayout: true,
-                            minimap: { enabled: true },
-                            scrollBeyondLastLine: false,
-                            fontSize: 13,
-                            lineNumbers: "on"
-                        });
-                        jsonEditorInstance.current.onDidChangeModelContent(() => {
-                            const value = jsonEditorInstance.current.getValue();
-                            setJsonText(value);
-                        });
-                    }
+                    if (diffViewMode === 'split') {
+                        // === 分栏模式初始化 ===
+                        // 销毁 Git 编辑器（如果存在）
+                        if (gitDiffEditorInstance.current) {
+                            gitDiffEditorInstance.current.dispose();
+                            gitDiffEditorInstance.current = null;
+                        }
 
-                    // 初始化右侧编辑器 (对比 JSON)
-                    if (diffEditorRef.current && !diffEditorInstance.current) {
-                        diffEditorInstance.current = monaco.editor.create(diffEditorRef.current, {
-                            value: diffText || '// 在此输入要对比的JSON',
-                            language: "json",
-                            theme: "vs-dark",
-                            automaticLayout: true,
-                            minimap: { enabled: true },
-                            scrollBeyondLastLine: false,
-                            fontSize: 13,
-                            lineNumbers: "on"
-                        });
-                        diffEditorInstance.current.onDidChangeModelContent(() => {
-                            const value = diffEditorInstance.current.getValue();
-                            setDiffText(value);
-                        });
+                        // 初始化左侧编辑器 (原始 JSON)
+                        if (diffLeftEditorRef.current && !jsonEditorInstance.current) {
+                             jsonEditorInstance.current = monaco.editor.create(diffLeftEditorRef.current, {
+                                value: jsonText,
+                                language: DATA_FORMATS[leftFormat].monacoLang, // 使用当前选择的格式
+                                theme: "vs-dark",
+                                automaticLayout: true,
+                                minimap: { enabled: true },
+                                scrollBeyondLastLine: false,
+                                fontSize: 13,
+                                lineNumbers: "on"
+                            });
+                            jsonEditorInstance.current.onDidChangeModelContent(() => {
+                                const value = jsonEditorInstance.current.getValue();
+                                setJsonText(value);
+                            });
+                        }
+
+                        // 初始化右侧编辑器 (对比 JSON)
+                        if (diffEditorRef.current && !diffEditorInstance.current) {
+                            diffEditorInstance.current = monaco.editor.create(diffEditorRef.current, {
+                                value: diffText || '',
+                                language: DATA_FORMATS[rightFormat].monacoLang,
+                                theme: "vs-dark",
+                                automaticLayout: true,
+                                minimap: { enabled: true },
+                                scrollBeyondLastLine: false,
+                                fontSize: 13,
+                                lineNumbers: "on"
+                            });
+                            diffEditorInstance.current.onDidChangeModelContent(() => {
+                                const value = diffEditorInstance.current.getValue();
+                                setDiffText(value);
+                            });
+                        }
+                    } else {
+                        // === Git 模式初始化 ===
+                        // 销毁分栏编辑器
+                        if (jsonEditorInstance.current) {
+                            jsonEditorInstance.current.dispose();
+                            jsonEditorInstance.current = null;
+                        }
+                        if (diffEditorInstance.current) {
+                            diffEditorInstance.current.dispose();
+                            diffEditorInstance.current = null;
+                        }
+
+                        if (gitDiffContainerRef.current && !gitDiffEditorInstance.current) {
+                            gitDiffEditorInstance.current = monaco.editor.createDiffEditor(gitDiffContainerRef.current, {
+                                theme: "vs-dark",
+                                automaticLayout: true,
+                                originalEditable: true, // 允许编辑左侧
+                                renderSideBySide: true, // 左右并排
+                                ignoreTrimWhitespace: false
+                            });
+
+                            const originalModel = monaco.editor.createModel(jsonText, DATA_FORMATS[leftFormat].monacoLang);
+                            const modifiedModel = monaco.editor.createModel(diffText, DATA_FORMATS[rightFormat].monacoLang);
+
+                            gitDiffEditorInstance.current.setModel({
+                                original: originalModel,
+                                modified: modifiedModel
+                            });
+
+                            // 监听内容变化同步回 state
+                            originalModel.onDidChangeContent(() => {
+                                setJsonText(originalModel.getValue());
+                            });
+                            modifiedModel.onDidChangeContent(() => {
+                                setDiffText(modifiedModel.getValue());
+                            });
+                        }
                     }
                 }
+            }, [isDiffMode, diffViewMode]); // 依赖视图模式切换
 
-                // 清理逻辑交给 toggleDiffMode 或组件卸载
-            }, [isDiffMode]); // 仅在模式切换时触发
+            // 监听格式变化，更新 Git Diff 的语言
+            useEffect(() => {
+                if (isDiffMode && diffViewMode === 'git' && gitDiffEditorInstance.current) {
+                    const { original, modified } = gitDiffEditorInstance.current.getModel();
+                    if (original) monaco.editor.setModelLanguage(original, DATA_FORMATS[leftFormat].monacoLang);
+                    if (modified) monaco.editor.setModelLanguage(modified, DATA_FORMATS[rightFormat].monacoLang);
+                }
+            }, [leftFormat, rightFormat, isDiffMode, diffViewMode]);
+
+            // 构建 path 到行号的映射
+            const buildPathLineMap = useCallback((text, format) => {
+                const map = {};
+                try {
+                    let jsonText = text;
+                    // 先解析再格式化，确保格式一致
+                    const obj = parseCurrentContent(text, format);
+                    jsonText = JSON.stringify(obj, null, 2);
+                    const lines = jsonText.split('\n');
+
+                    // 递归函数来构建映射
+                    const traverse = (node, currentPath, startLine) => {
+                        if (typeof node !== 'object' || node === null) return startLine;
+
+                        let lastLine = startLine;
+                        const keys = Array.isArray(node) ? node.map((_, i) => i) : Object.keys(node);
+
+                        for (const key of keys) {
+                            const newPath = currentPath ? `${currentPath}.${key}` : String(key);
+                            const keyStr = Array.isArray(node) ? `[${key}]` : `"${key}"`;
+
+                            // 在 lines 中搜索这个 key（从 lastLine 开始）
+                            for (let i = lastLine; i < lines.length; i++) {
+                                const line = lines[i];
+                                const hasKey = Array.isArray(node)
+                                    ? (line.trim().startsWith('{') || line.trim().startsWith('[') || /^[\s]*["\d\[\{]/.test(line))
+                                    : line.includes(`"${key}"`);
+
+                                if (hasKey || (Array.isArray(node) && i > lastLine)) {
+                                    if (!Array.isArray(node) && line.includes(`"${key}"`)) {
+                                        map[newPath] = i + 1;
+                                        lastLine = i + 1;
+                                        // 递归处理子节点
+                                        if (typeof node[key] === 'object' && node[key] !== null) {
+                                            lastLine = traverse(node[key], newPath, lastLine);
+                                        }
+                                        break;
+                                    } else if (Array.isArray(node)) {
+                                        // 数组元素
+                                        map[newPath] = i + 1;
+                                        lastLine = i + 1;
+                                        if (typeof node[key] === 'object' && node[key] !== null) {
+                                            lastLine = traverse(node[key], newPath, lastLine);
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        return lastLine;
+                    };
+
+                    traverse(obj, '', 0);
+                } catch (e) {
+                    console.error('构建行号映射失败:', e);
+                }
+                return map;
+            }, [parseCurrentContent]);
 
             // 深度对比两个对象
             const deepCompare = useCallback((obj1, obj2, path = '') => {
@@ -2087,14 +2203,25 @@
 
                     const differences = deepCompare(leftObj, rightObj);
 
+                    // 构建行号映射
+                    const leftLineMap = buildPathLineMap(leftContent, leftFormat);
+                    const rightLineMap = buildPathLineMap(rightContent, rightFormat);
+
+                    // 为差异添加行号信息
+                    const differencesWithLines = differences.map(diff => ({
+                        ...diff,
+                        leftLine: leftLineMap[diff.path] || null,
+                        rightLine: rightLineMap[diff.path] || null
+                    }));
+
                     const stats = {
-                        added: differences.filter(d => d.type === 'added').length,
-                        removed: differences.filter(d => d.type === 'removed').length,
-                        modified: differences.filter(d => d.type === 'modified').length
+                        added: differencesWithLines.filter(d => d.type === 'added').length,
+                        removed: differencesWithLines.filter(d => d.type === 'removed').length,
+                        modified: differencesWithLines.filter(d => d.type === 'modified').length
                     };
 
                     setDiffAnalysis({
-                        differences,
+                        differences: differencesWithLines,
                         stats,
                         leftFormat,
                         rightFormat
@@ -2135,7 +2262,7 @@
                         setIsCodeGenMode(false);
                     }
 
-                    // 切换模式时，清理编辑器实例
+                    // 切换模式时，清理所有编辑器实例
                     if (jsonEditorInstance.current) {
                         jsonEditorInstance.current.dispose();
                         jsonEditorInstance.current = null;
@@ -2147,6 +2274,10 @@
                     if (codeEditorInstance.current) {
                         codeEditorInstance.current.dispose();
                         codeEditorInstance.current = null;
+                    }
+                    if (gitDiffEditorInstance.current) {
+                        gitDiffEditorInstance.current.dispose();
+                        gitDiffEditorInstance.current = null;
                     }
 
                     return newMode;
@@ -2896,6 +3027,23 @@
                                         },
                                         React.createElement("i", { className: "fas fa-code-compare" }),
                                         "执行对比"
+                                    ),
+                                    // 视图切换按钮
+                                    React.createElement("div", { className: "mode-switch-inline", style: { marginLeft: "8px" } },
+                                        React.createElement("div", {
+                                            style: { display: "flex", gap: "2px", background: "rgba(0,0,0,0.2)", padding: "2px", borderRadius: "4px" }
+                                        },
+                                            React.createElement("button", {
+                                                className: `btn-sm ${diffViewMode === 'split' ? 'btn-primary' : 'btn-secondary'}`,
+                                                onClick: () => setDiffViewMode('split'),
+                                                style: { border: 'none', borderRadius: '3px', padding: '2px 8px' }
+                                            }, "语义视图"),
+                                            React.createElement("button", {
+                                                className: `btn-sm ${diffViewMode === 'git' ? 'btn-primary' : 'btn-secondary'}`,
+                                                onClick: () => setDiffViewMode('git'),
+                                                style: { border: 'none', borderRadius: '3px', padding: '2px 8px' }
+                                            }, "Git视图")
+                                        )
                                     )
                                 )
                             ) : (
@@ -3271,13 +3419,46 @@
                         })
                     ),
 
-                    // 需求2：对比模式布局 (左35% - 中30% - 右35%)
-                    isDiffMode && React.createElement("div", { className: "diff-layout", style: { width: '100%' } },
+                    // 需求2：对比模式布局
+                    isDiffMode && (
+                        diffViewMode === 'git' ? (
+                            // === Git Diff 视图 ===
+                            React.createElement("div", { className: "diff-layout", style: { width: '100%', flexDirection: 'column' } },
+                                React.createElement("div", { className: "diff-header", style: { border: '1px solid #334155', borderBottom: 'none', borderRadius: '6px 6px 0 0' } },
+                                    React.createElement("div", { className: "diff-title" },
+                                        React.createElement("i", { className: "fas fa-git-alt", style: { marginRight: '8px', color: '#f14e32' } }),
+                                        "Git Diff 模式 (左侧可编辑)"
+                                    ),
+                                    // 复用格式选择，控制高亮语言
+                                    React.createElement("div", { className: "header-conversion-tools" },
+                                        React.createElement("span", { style: { fontSize: '12px', color: '#94a3b8', marginRight: '4px'} }, "语言:"),
+                                        React.createElement("select", {
+                                            className: "format-select compact-select",
+                                            value: leftFormat,
+                                            onChange: (e) => {
+                                                setLeftFormat(e.target.value);
+                                                setRightFormat(e.target.value); // Git模式建议保持一致
+                                            }
+                                        },
+                                            Object.entries(DATA_FORMATS).map(([val, conf]) =>
+                                                React.createElement("option", { key: val, value: val }, conf.name)
+                                            )
+                                        )
+                                    )
+                                ),
+                                React.createElement("div", {
+                                    ref: gitDiffContainerRef,
+                                    style: { flex: 1, border: '1px solid #334155', borderRadius: '0 0 6px 6px', overflow: 'hidden' }
+                                })
+                            )
+                        ) : (
+                            // === 原有分栏视图 ===
+                            React.createElement("div", { className: "diff-layout", style: { width: '100%' } },
 
-                        // 左侧编辑器 (35%)
-                        React.createElement("div", { className: "diff-side", style: { flex: '0 0 35%', maxWidth: '35%', width: '35%' } },
-                            // 左侧 Header
-                            React.createElement("div", { className: "diff-header" },
+                                // 左侧编辑器 (35%)
+                                React.createElement("div", { className: "diff-side", style: { flex: '0 0 35%', maxWidth: '35%', width: '35%' } },
+                                    // 左侧 Header
+                                    React.createElement("div", { className: "diff-header" },
                                 React.createElement("div", { className: "diff-title" },
                                     React.createElement("select", {
                                             className: "format-select compact-select",
@@ -3342,11 +3523,23 @@
                                             React.createElement("div", { style: { color: '#22c55e' } }, "> √ 两份数据在语义上完全一致") :
                                             diffAnalysis.differences.map((diff, i) =>
                                                 React.createElement("div", { key: i, style: { marginBottom: '8px', fontFamily: 'monospace' } },
-                                                    React.createElement("div", { style: { color: '#94a3b8' } }, `PATH: ${diff.path || '(root)'}`),
+                                                    React.createElement("div", { style: { color: '#94a3b8', display: 'flex', justifyContent: 'space-between', alignItems: 'center' } },
+                                                        React.createElement("span", null, `PATH: ${diff.path || '(root)'}`),
+                                                        React.createElement("span", { style: { fontSize: '10px', color: '#64748b' } },
+                                                            diff.leftLine || diff.rightLine ?
+                                                                `L:${diff.leftLine || '-'} / R:${diff.rightLine || '-'}` : ''
+                                                        )
+                                                    ),
                                                     (diff.type === 'removed' || diff.type === 'modified') &&
-                                                        React.createElement("div", { style: { color: '#ef4444' } }, `- ${JSON.stringify(diff.oldValue !== undefined ? diff.oldValue : diff.value)}`),
+                                                        React.createElement("div", { style: { color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' } },
+                                                            diff.leftLine && React.createElement("span", { style: { fontSize: '10px', color: '#f87171', minWidth: '35px' } }, `[${diff.leftLine}]`),
+                                                            React.createElement("span", null, `- ${JSON.stringify(diff.oldValue !== undefined ? diff.oldValue : diff.value)}`)
+                                                        ),
                                                     (diff.type === 'added' || diff.type === 'modified') &&
-                                                        React.createElement("div", { style: { color: '#22c55e' } }, `+ ${JSON.stringify(diff.newValue !== undefined ? diff.newValue : diff.value)}`)
+                                                        React.createElement("div", { style: { color: '#22c55e', display: 'flex', alignItems: 'center', gap: '8px' } },
+                                                            diff.rightLine && React.createElement("span", { style: { fontSize: '10px', color: '#4ade80', minWidth: '35px' } }, `[${diff.rightLine}]`),
+                                                            React.createElement("span", null, `+ ${JSON.stringify(diff.newValue !== undefined ? diff.newValue : diff.value)}`)
+                                                        )
                                                 )
                                             )
                                     )
@@ -3398,7 +3591,9 @@
                             })
                         )
                     )
-                ),
+                )
+            )
+        ),
 
                 isCodeGenMode && React.createElement("div", { className: "status-bar" },
                     React.createElement("div", { className: "status-item" },
@@ -3474,7 +3669,7 @@
                     )
                 )
             )
-        }
+    }
 
         // ============= 修复的辅助函数 =============
 
