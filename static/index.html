@@ -406,7 +406,7 @@
             flex: 1;
             gap: 12px;
             min-height: 0;
-            height: calc(100vh - 240px);
+            /* height: calc(100vh - 240px); 移除固定计算，使用 flex 自适应 */
         }
 
         .panel {
@@ -671,10 +671,17 @@
         }
 
         .header-conversion-tools .format-select {
-            background: rgba(255, 255, 255, 0.1);
+            background: #1e293b;
+            color: #f1f5f9;
             border: 1px solid rgba(255, 255, 255, 0.2);
             padding: 3px 6px;
             height: 24px;
+        }
+
+        /* 修复 Windows 下拉选项显示问题 */
+        .header-conversion-tools .format-select option {
+            background: #1e293b;
+            color: #f1f5f9;
         }
 
         .header-conversion-tools .btn-sm {
@@ -1011,6 +1018,26 @@
         .diff-stat-modified {
             color: #fbbf24;
         }
+
+        /* 底部备案信息样式 */
+        .footer {
+            text-align: center;
+            padding: 8px 0;
+            font-size: 11px;
+            color: #64748b;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(15, 23, 42, 0.6);
+        }
+
+        .footer a {
+            color: #64748b;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer a:hover {
+            color: #94a3b8;
+        }
     </style>
 </head>
 <body>
@@ -1036,41 +1063,41 @@
     require(["vs/editor/editor.main"], function () {
         const { useState, useEffect, useRef, useCallback } = React;
 
-        // 语言配置
+        // 语言配置 (使用 FontAwesome 图标以确保跨平台兼容性)
         const LANGUAGE_CONFIG = {
             go: {
                 name: "Golang",
-                icon: "🔵",
+                icon: "fab fa-golang",
                 fileExt: "go",
                 monacoLang: "go"
             },
             java: {
                 name: "Java",
-                icon: "☕",
+                icon: "fab fa-java",
                 fileExt: "java",
                 monacoLang: "java"
             },
             typescript: {
                 name: "TypeScript",
-                icon: "📘",
+                icon: "fab fa-js-square",
                 fileExt: "ts",
                 monacoLang: "typescript"
             },
             python: {
                 name: "Python",
-                icon: "🐍",
+                icon: "fab fa-python",
                 fileExt: "py",
                 monacoLang: "python"
             },
             kotlin: {
                 name: "Kotlin",
-                icon: "⚡",
+                icon: "fas fa-code",
                 fileExt: "kt",
                 monacoLang: "kotlin"
             },
             rust: {
                 name: "Rust",
-                icon: "🦀",
+                icon: "fab fa-rust",
                 fileExt: "rs",
                 monacoLang: "rust"
             }
@@ -2094,6 +2121,30 @@
                         }
                     }
                 }
+
+                // 修复：添加清理函数，防止实例残留和双重绑定
+                return () => {
+                    // 清理 split 模式的实例
+                    if (jsonEditorInstance.current) {
+                        jsonEditorInstance.current.dispose();
+                        jsonEditorInstance.current = null;
+                    }
+                    if (diffEditorInstance.current) {
+                        diffEditorInstance.current.dispose();
+                        diffEditorInstance.current = null;
+                    }
+                    // 清理 git 模式的实例
+                    if (gitDiffEditorInstance.current) {
+                        // 清理手动创建的 Model
+                        const models = gitDiffEditorInstance.current.getModel();
+                        if (models) {
+                            if (models.original) models.original.dispose();
+                            if (models.modified) models.modified.dispose();
+                        }
+                        gitDiffEditorInstance.current.dispose();
+                        gitDiffEditorInstance.current = null;
+                    }
+                };
             }, [isDiffMode, diffViewMode]); // 依赖视图模式切换
 
             // 监听格式变化，更新 Git Diff 的语言
@@ -3168,7 +3219,7 @@
                             },
                             Object.entries(LANGUAGE_CONFIG).map(([value, config]) =>
                                 React.createElement("option", { key: value, value: value },
-                                    `${config.icon} ${config.name}`
+                                    config.name
                                 )
                             )
                         )
@@ -3667,9 +3718,18 @@
                             "下载"
                         )
                     )
+                ),
+
+                React.createElement("div", { className: "footer" },
+                    React.createElement("div", null,
+                        "© 2024 JSON Converter Tool | ",
+                        React.createElement("a", { href: "#", onClick: (e) => e.preventDefault() }, "京ICP备XXXXXXXX号-1"),
+                        " | ",
+                        React.createElement("a", { href: "#", onClick: (e) => e.preventDefault() }, "隐私政策")
+                    )
                 )
             )
-    }
+        }
 
         // ============= 修复的辅助函数 =============
 
