@@ -1172,17 +1172,38 @@
             text: { name: 'Text', icon: 'fas fa-font', monacoLang: 'plaintext' }
         };
 
+        // 常见缩略词列表 (Go Lint标准 + 常见Web缩略词)
+        const COMMON_INITIALISMS = new Set([
+            "ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP",
+            "HTTPS", "ID", "IP", "JSON", "LHS", "QPS", "RAM", "RHS", "RPC", "SLA",
+            "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "UID", "UUID",
+            "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS"
+        ]);
+
         // 命名格式配置
         const CASE_FORMATS = {
             pascal: {
                 name: "大驼峰 (PascalCase)",
-                fn: (str) => str.split(/[_\s-]+/).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('')
+                fn: (str) => str.split(/[_\s-]+/).map(word => {
+                    const upper = word.toUpperCase();
+                    if (COMMON_INITIALISMS.has(upper)) return upper;
+                    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                }).join('')
             },
             camel: {
                 name: "小驼峰 (camelCase)",
                 fn: (str) => {
                     const words = str.split(/[_\s-]+/);
-                    return words[0].toLowerCase() + words.slice(1).map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join('');
+                    return words.map((word, index) => {
+                        const upper = word.toUpperCase();
+                        if (index === 0) {
+                            // 首单词始终小写
+                            return word.toLowerCase();
+                        }
+                        // 后续单词，如果是缩略词则全大写 (如 UserID, ParseXML)
+                        if (COMMON_INITIALISMS.has(upper)) return upper;
+                        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                    }).join('');
                 }
             },
             snake: {
@@ -1245,142 +1266,91 @@
             const codeEditorRef = useRef(null);
             const codeEditorInstance = useRef(null);
 
-            // 改进的数组合并工具函数（支持多维数组递归合并和深度字段合并）
-            const mergeArrayItems = useCallback((array, path = '') => {
-                if (!array || array.length <= 1) return array;
+            // 改进的数组合并工具函数：生成包含所有字段并集的超级对象，并置于数组首位
+            const mergeArrayItems = useCallback((array) => {
+                if (!array || !Array.isArray(array) || array.length === 0) return array;
+
+                // 深度合并两个对象
+                const deepMerge = (target, source) => {
+                    if (!source || typeof source !== 'object') return target;
+                    if (!target || typeof target !== 'object') return source;
+
+                    // 如果是数组，不进行元素合并，而是保留结构（因为我们只关心结构定义）
+                    // 这里的关键是：如果 target 是空数组，source 有内容，取 source
+                    if (Array.isArray(source)) {
+                        if (!Array.isArray(target) || target.length === 0) return source;
+
+                        // 递归处理数组内部元素的合并
+                        // 假设数组内存储的是同构对象
+                        if (source.length > 0 && typeof source[0] === 'object') {
+                            const mergedChild = mergeArrayItems([...target, ...source]);
+                            return mergedChild; // 返回合并后的新数组
+                        }
+                        return target;
+                    }
+
+                    const output = { ...target };
+                    Object.keys(source).forEach(key => {
+                        if (source[key] && typeof source[key] === 'object') {
+                            if (!(key in target)) {
+                                Object.assign(output, { [key]: source[key] });
+                            } else {
+                                output[key] = deepMerge(target[key], source[key]);
+                            }
+                        } else {
+                            if (!(key in target)) {
+                                Object.assign(output, { [key]: source[key] });
+                            }
+                            // 如果 target 已有该 key，且 source[key] 是 null/undefined，保留 target
+                            // 如果 target[key] 是 null/undefined，且 source[key] 有值，更新
+                            else if ((output[key] === null || output[key] === undefined || output[key] === "") &&
+                                     (source[key] !== null && source[key] !== undefined && source[key] !== "")) {
+                                output[key] = source[key];
+                            }
+                        }
+                    });
+                    return output;
+                };
 
                 const firstItem = array[0];
 
-                // 处理多维数组：递归处理子数组
-                if (Array.isArray(firstItem)) {
-                    return array.map(subArray => mergeArrayItems(subArray, path + '[]'));
-                }
-
-                // 处理对象数组
+                // 1. 处理对象数组：计算所有对象的并集
                 if (firstItem && typeof firstItem === 'object' && !Array.isArray(firstItem)) {
-                    // 检查结构是否相同
-                    const checkStructure = (item) => {
-                        if (!item || typeof item !== 'object' || Array.isArray(item)) {
-                            return null;
-                        }
-                        return Object.keys(item).sort();
-                    };
+                    let superObject = {};
 
-                    const firstKeys = checkStructure(firstItem);
-                    if (!firstKeys) return array;
-
-                    // 检查所有对象是否结构相同
-                    let allSameStructure = true;
-                    for (let i = 1; i < array.length; i++) {
-                        const currentKeys = checkStructure(array[i]);
-                        if (!currentKeys || JSON.stringify(currentKeys) !== JSON.stringify(firstKeys)) {
-                            allSameStructure = false;
-                            break;
+                    // 遍历所有元素，合并出一个超级对象
+                    for (const item of array) {
+                        if (item && typeof item === 'object' && !Array.isArray(item)) {
+                             superObject = deepMerge(superObject, item);
                         }
                     }
 
-                    if (allSameStructure) return array;
-
-                    // 收集所有对象的字段（递归）
-                    const allFields = new Map(); // 使用Map记录每个字段的类型和值
-
-                    array.forEach(item => {
-                        if (item && typeof item === 'object' && !Array.isArray(item)) {
-                            const collectFields = (obj, prefix = '') => {
-                                Object.keys(obj).forEach(key => {
-                                    const fullPath = prefix ? `${prefix}.${key}` : key;
-                                    const value = obj[key];
-
-                                    if (Array.isArray(value)) {
-                                        // 对于数组，递归处理
-                                        if (value.length > 0 && typeof value[0] === 'object') {
-                                            // 递归收集数组内的字段
-                                            const mergedArray = mergeArrayItems(value, fullPath);
-                                            allFields.set(fullPath, {
-                                                type: 'array',
-                                                values: [mergedArray]
-                                            });
-                                        } else {
-                                            // 基本类型数组
-                                            if (!allFields.has(fullPath)) {
-                                                allFields.set(fullPath, { type: 'array', values: [] });
-                                            }
-                                            allFields.get(fullPath).values.push(value);
-                                        }
-                                    } else if (value && typeof value === 'object') {
-                                        // 递归收集嵌套对象
-                                        collectFields(value, fullPath);
-                                    } else {
-                                        // 基本类型
-                                        if (!allFields.has(fullPath)) {
-                                            allFields.set(fullPath, { type: 'primitive', values: [] });
-                                        }
-                                        allFields.get(fullPath).values.push(value);
-                                    }
-                                });
-                            };
-                            collectFields(item);
+                    // 递归处理超级对象中的子数组/子对象
+                    const processSuperObject = (obj) => {
+                        const result = { ...obj };
+                        for (const [key, value] of Object.entries(result)) {
+                            if (Array.isArray(value)) {
+                                result[key] = mergeArrayItems(value);
+                            } else if (value && typeof value === 'object') {
+                                result[key] = processSuperObject(value);
+                            }
                         }
-                    });
+                        return result;
+                    };
 
-                    // 创建合并后的数组
-                    return array.map(item => {
-                        if (!item || typeof item !== 'object' || Array.isArray(item)) {
-                            return item;
-                        }
+                    const finalSuperObject = processSuperObject(superObject);
 
-                        const createMergedObject = (fieldsMap, currentObj = {}, prefix = '') => {
-                            const result = { ...currentObj };
+                    // 关键步骤：返回一个新的数组，只包含这个超级对象
+                    // 这样代码生成器取 array[0] 时，就能得到完整的结构定义
+                    return [finalSuperObject];
+                }
 
-                            fieldsMap.forEach((fieldInfo, fieldPath) => {
-                                if (!fieldPath.startsWith(prefix) && prefix) {
-                                    // 不属于当前层级，跳过
-                                    return;
-                                }
-
-                                const relativePath = prefix ? fieldPath.substring(prefix.length + 1) : fieldPath;
-                                const pathParts = relativePath.split('.');
-                                const fieldName = pathParts[0];
-
-                                if (pathParts.length === 1) {
-                                    // 当前层级的字段
-                                    if (item && item.hasOwnProperty(fieldName)) {
-                                        const value = item[fieldName];
-                                        if (fieldInfo.type === 'array' && Array.isArray(value)) {
-                                            if (value.length > 0 && typeof value[0] === 'object') {
-                                                // 递归合并嵌套数组
-                                                result[fieldName] = mergeArrayItems(value, fieldPath);
-                                            } else {
-                                                result[fieldName] = value;
-                                            }
-                                        } else if (value && typeof value === 'object') {
-                                            // 嵌套对象，递归处理
-                                            const nestedFields = new Map();
-                                            fieldsMap.forEach((info, path) => {
-                                                if (path.startsWith(fieldPath + '.')) {
-                                                    nestedFields.set(path, info);
-                                                }
-                                            });
-                                            result[fieldName] = createMergedObject(nestedFields, value, fieldPath);
-                                        } else {
-                                            result[fieldName] = value;
-                                        }
-                                    } else {
-                                        // 缺失的字段
-                                        if (fieldInfo.type === 'array') {
-                                            result[fieldName] = [];
-                                        } else {
-                                            result[fieldName] = '';
-                                        }
-                                    }
-                                }
-                            });
-
-                            return result;
-                        };
-
-                        return createMergedObject(allFields, item);
-                    });
+                // 2. 处理多维数组
+                if (Array.isArray(firstItem)) {
+                    // 对于 [[...], [...]]，我们需要合并内部的子数组结构
+                    // 将所有子数组展平合并，然后再递归调用
+                    const flattened = array.flat();
+                    return [mergeArrayItems(flattened)];
                 }
 
                 return array;
@@ -1390,31 +1360,17 @@
             const processObject = useCallback((data) => {
                 if (!mergeArrayFields) return data;
 
+                // 深拷贝一份数据，避免修改原数据
+                const clonedData = JSON.parse(JSON.stringify(data));
+
                 const process = (item) => {
                     if (Array.isArray(item)) {
-                        if (item.length > 0) {
-                            const firstItem = item[0];
-                            if (firstItem && typeof firstItem === 'object') {
-                                // 递归处理多维数组
-                                const processedArray = mergeArrayItems(item).map(process);
-                                return processedArray;
-                            } else if (Array.isArray(firstItem)) {
-                                // 多维数组
-                                return item.map(subArray => {
-                                    if (Array.isArray(subArray) && subArray.length > 0) {
-                                        const subFirstItem = subArray[0];
-                                        if (subFirstItem && typeof subFirstItem === 'object') {
-                                            return mergeArrayItems(subArray).map(process);
-                                        }
-                                    }
-                                    return subArray.map(process);
-                                });
-                            }
-                        }
-                        return item;
+                        // 如果是数组，调用合并逻辑，返回包含超级对象的单元素数组
+                        return mergeArrayItems(item);
                     } else if (item && typeof item === 'object') {
                         const result = {};
                         Object.entries(item).forEach(([key, value]) => {
+                            // 递归处理对象的每个字段
                             if (Array.isArray(value)) {
                                 result[key] = process(value);
                             } else if (value && typeof value === 'object') {
@@ -1428,7 +1384,7 @@
                     return item;
                 };
 
-                return process(JSON.parse(JSON.stringify(data)));
+                return process(clonedData);
             }, [mergeArrayFields, mergeArrayItems]);
             // 初始化编辑器
             useEffect(() => {
@@ -2204,21 +2160,29 @@
                 let formatted = '';
                 let indentLevel = 0;
                 const indentStr = '  ';
-                let inString = false;
+                let inString = false; // 当前是否在字符串内
+                let strQuote = null;  // 记录当前字符串使用的引号类型 (" 或 ')
                 let isEscaped = false;
 
                 for (let i = 0; i < text.length; i++) {
                     const char = text[i];
 
                     if (inString) {
-                        if (char === '\\') isEscaped = !isEscaped;
-                        else if (char === '"' && !isEscaped) inString = false;
+                        if (isEscaped) {
+                            isEscaped = false; // 转义只对下一个字符有效，重置
+                        } else if (char === '\\') {
+                            isEscaped = true;
+                        } else if (char === strQuote) {
+                            inString = false;
+                            strQuote = null;
+                        }
                         formatted += char;
                         continue;
                     }
 
-                    if (char === '"') {
+                    if (char === '"' || char === "'") {
                         inString = true;
+                        strQuote = char;
                         formatted += char;
                         continue;
                     }
@@ -2245,39 +2209,186 @@
                 try {
                     const jsonValue = jsonEditorInstance.current?.getValue() || jsonText;
 
-                    // 0. 预处理：替换中文标点 (始终执行)
-                    let fixed = jsonValue
-                        .replace(/[。；]/g, ',') // 句号分号变逗号
-                        .replace(/，/g, ',')     // 中文逗号
-                        .replace(/“|”/g, '"');   // 中文引号
+                    // 安全的去注释函数 (上下文感知)
+                    const safeRemoveComments = (text) => {
+                        const lines = text.split('\n');
+                        const resultLines = [];
 
-                    // 1. 尝试直接 Parse
+                        lines.forEach(line => {
+                            let inString = false;
+                            let strQuote = null; // " 或 '
+                            let escaped = false;
+                            let cleanLine = '';
+
+                            for (let i = 0; i < line.length; i++) {
+                                const char = line[i];
+                                const nextChar = i + 1 < line.length ? line[i + 1] : '';
+
+                                if (inString) {
+                                    if (escaped) {
+                                        escaped = false;
+                                    } else if (char === '\\') {
+                                        escaped = true;
+                                    } else if (char === strQuote) {
+                                        inString = false;
+                                        strQuote = null;
+                                    }
+                                    cleanLine += char;
+                                } else {
+                                    if (char === '"' || char === "'") {
+                                        inString = true;
+                                        strQuote = char;
+                                        cleanLine += char;
+                                    } else if (char === '/' && nextChar === '/') {
+                                        // 发现注释，忽略该行剩余部分
+                                        break;
+                                    } else {
+                                        cleanLine += char;
+                                    }
+                                }
+                            }
+                            resultLines.push(cleanLine);
+                        });
+                        return resultLines.join('\n');
+                    };
+
+                    // 1. 优先尝试直接 Parse (保留原文的中文符号，不做任何破坏性修改)
                     try {
-                        const cleanedValue = fixed.replace(/\/\/.*$/gm, ''); // 去注释
+                        // 仅去除注释 (使用安全方法)
+                        const cleanedValue = safeRemoveComments(jsonValue);
                         const parsed = JSON.parse(cleanedValue);
                         const formatted = JSON.stringify(parsed, null, 2);
                         if (jsonEditorInstance.current) jsonEditorInstance.current.setValue(formatted);
                         setJsonText(formatted);
-                        setError(""); // 需求1: 成功不显示提示
+                        setError("");
                         setFormatErrors([]);
                         return;
                     } catch (e) {
-                        // Parse 失败
+                        // Parse 失败，继续尝试修复
                     }
 
-                    // 2. 尝试修复双冒号 "key":"val":"val" -> "key": "val:val" (仅作猜测修复，不保证正确)
-                    // 用户用例: "query_type":"formula":"OC1..."
-                    // 这种结构如果不转义第二个冒号，根本无法 Parse。
-                    // 策略：使用软格式化来展示
+                    // 2. 智能预处理：只替换字符串外部的中文标点
+                    // 支持双引号和单引号作为定界符
+                    const smartPreprocess = (text) => {
+                        let res = '';
+                        let inStr = false;
+                        let strQuote = null; // " 或 '
+                        let escaped = false;
 
+                        for (let i = 0; i < text.length; i++) {
+                            const char = text[i];
+
+                            if (inStr) {
+                                if (escaped) {
+                                    escaped = false;
+                                } else if (char === '\\') {
+                                    escaped = true;
+                                } else if (char === strQuote) {
+                                    inStr = false;
+                                    strQuote = null;
+                                }
+                                res += char; // 字符串内保持原样
+                            } else {
+                                if (char === '"' || char === "'") {
+                                    inStr = true;
+                                    strQuote = char;
+                                }
+
+                                // 字符串外进行替换
+                                if (char === '，' || char === '。' || char === '；') res += ',';
+                                else if (char === '：') res += ':';
+                                else if (char === '“' || char === '”') res += '"'; // 尝试修复定界符
+                                else res += char;
+                            }
+                        }
+                        return res;
+                    };
+
+                    const fixed = smartPreprocess(jsonValue);
+
+                    // 3. 尝试 Parse 修复后的文本
+                    try {
+                        const cleanedValue = safeRemoveComments(fixed);
+                        const parsed = JSON.parse(cleanedValue);
+                        const formatted = JSON.stringify(parsed, null, 2);
+                        if (jsonEditorInstance.current) jsonEditorInstance.current.setValue(formatted);
+                        setJsonText(formatted);
+                        setError(""); // 修复成功
+                        setFormatErrors([]);
+                        return;
+                    } catch (e) {
+                        // 依然失败
+                    }
+
+                    // 4. 最后的手段：软格式化 (使用修复后的文本)
                     const softFormatted = softFormatJson(fixed);
                     if (jsonEditorInstance.current) jsonEditorInstance.current.setValue(softFormatted);
                     setJsonText(softFormatted);
-                    setError("JSON存在语法错误，已执行视觉格式化 (Soft Format)");
+
+                    // 尝试解析 softFormatted 以发现具体的语法错误并抛出
+                    try {
+                        const cleanedSoft = safeRemoveComments(softFormatted);
+                        JSON.parse(cleanedSoft);
+                    } catch (e) {
+                        throw e; // 抛出错误以触发外层的错误提示逻辑
+                    }
+
+                    // 如果软格式化后竟然解析成功了（极少见），清除错误
+                    setError("JSON存在语法错误，已执行视觉格式化");
                     setFormatErrors([]);
 
                 } catch (err) {
-                    setError(`格式化错误: ${err.message}`);
+                    // 解析错误位置并提示
+                    let errorMsg = err.message;
+                    let errorLine = -1;
+
+                    // 重新获取最新的编辑器内容（可能是软格式化后的）
+                    const currentContent = jsonEditorInstance.current?.getValue() || jsonText;
+                    // 为了准确计算行号，必须基于去注释后的文本
+                    const cleanedContent = safeRemoveComments(currentContent);
+
+                    // 尝试从错误信息提取位置 (Chrome/V8: "at position X", Firefox: "at line X column Y")
+                    const positionMatch = errorMsg.match(/at position (\d+)/);
+
+                    if (positionMatch) {
+                        const pos = parseInt(positionMatch[1], 10);
+                        // 计算行号：基于去注释的文本计算
+                        const valueUpToError = cleanedContent.substring(0, pos);
+                        errorLine = valueUpToError.split('\n').length;
+                        errorMsg = `格式错误 (第 ${errorLine} 行): ${errorMsg}`;
+
+                        // 在编辑器中标记错误
+                        if (jsonEditorInstance.current) {
+                            const model = jsonEditorInstance.current.getModel();
+                            if (model) {
+                                monaco.editor.setModelMarkers(model, "json-owner", [{
+                                    startLineNumber: errorLine,
+                                    startColumn: 1,
+                                    endLineNumber: errorLine,
+                                    endColumn: model.getLineContent(errorLine).length + 1,
+                                    message: err.message,
+                                    severity: monaco.MarkerSeverity.Error
+                                }]);
+                                // 滚动到错误行
+                                jsonEditorInstance.current.revealLineInCenter(errorLine);
+                            }
+                        }
+
+                        setFormatErrors([{ line: errorLine, error: err.message, index: pos }]);
+                    } else {
+                        // 尝试匹配 line/column 格式
+                         const lineMatch = errorMsg.match(/line (\d+) column (\d+)/);
+                         if (lineMatch) {
+                             errorLine = parseInt(lineMatch[1], 10);
+                             errorMsg = `格式错误 (第 ${errorLine} 行): ${errorMsg}`;
+                             setFormatErrors([{ line: errorLine, error: err.message }]);
+                             if (jsonEditorInstance.current) {
+                                 jsonEditorInstance.current.revealLineInCenter(errorLine);
+                             }
+                         }
+                    }
+
+                    setError(errorMsg);
                 }
             }, [jsonText]);
 
