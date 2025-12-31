@@ -1265,6 +1265,11 @@
             const gitDiffContainerRef = useRef(null);
             const gitDiffEditorInstance = useRef(null);
 
+            // 新增：文件上传引用
+            const fileInputRef = useRef(null);
+            // 新增：当前上传目标 ('main' | 'diff')
+            const uploadTargetRef = useRef('main');
+
             const [lang, setLang] = useState("go");
             const [goTags, setGoTags] = useState({
                 json: true,
@@ -1961,6 +1966,15 @@
                 return finalResult;
             }, []);
 
+            // 简单的格式检测函数
+            const detectContentFormat = useCallback((text) => {
+                if (!text || typeof text !== 'string') return null;
+                const trimmed = text.trim();
+                if (trimmed.startsWith('{') || trimmed.startsWith('[')) return 'json';
+                if (trimmed.startsWith('<') && trimmed.includes('>')) return 'xml';
+                return null;
+            }, []);
+
             // 统一的对象解析函数
             const parseCurrentContent = useCallback((content, format) => {
                 try {
@@ -1985,53 +1999,93 @@
                 }
             }, [parseJsonWithComments, xmlToJson, iniToJson, yamlToJson]);
 
-            // 格式转换函数
-            const convertFormat = useCallback((targetFormat) => {
-                try {
-                    const currentValue = jsonEditorInstance.current?.getValue() || jsonText;
-                    const fromFormat = dataFormat;
+            // 智能格式切换函数 (统一处理主编辑器和Diff编辑器)
+            const handleSmartFormatChange = useCallback((targetFormat, context = 'main') => {
+                // context: 'main' | 'diff-left' | 'diff-right'
+                let text, currentFormat, editor, setFormat, setText, handleError;
 
-                    if (fromFormat === targetFormat) return;
-
-                    const obj = parseCurrentContent(currentValue, fromFormat);
-
-                    // 2. 将 JSON 对象转换为目标格式
-                    let result = '';
-                    switch (targetFormat) {
-                        case 'json':
-                            result = JSON.stringify(obj, null, 2);
-                            break;
-                        case 'xml':
-                            result = jsonToXml(obj);
-                            break;
-                        case 'yaml':
-                            result = jsonToYaml(obj);
-                            break;
-                        case 'toml':
-                            result = jsonToToml(obj);
-                            break;
-                        case 'ini':
-                            result = jsonToIni(obj);
-                            break;
-                        default:
-                            throw new Error(`不支持的目标格式: ${targetFormat}`);
-                    }
-
-                    if (jsonEditorInstance.current) {
-                        jsonEditorInstance.current.setValue(result);
-                        const model = jsonEditorInstance.current.getModel();
-                        if (model) {
-                            monaco.editor.setModelLanguage(model, DATA_FORMATS[targetFormat].monacoLang);
-                        }
-                    }
-                    setJsonText(result);
-                    setDataFormat(targetFormat);
-                    setError(""); // 需求1: 成功不显示提示
-
-                } catch (err) {
-                    setError(`格式转换错误: ${err.message}`);
+                if (context === 'main') {
+                    text = jsonEditorInstance.current?.getValue() || jsonText;
+                    currentFormat = dataFormat;
+                    editor = jsonEditorInstance.current;
+                    setFormat = setDataFormat;
+                    setText = setJsonText;
+                    handleError = setError;
+                } else if (context === 'diff-left') {
+                    text = jsonEditorInstance.current?.getValue() || jsonText;
+                    currentFormat = leftFormat;
+                    editor = jsonEditorInstance.current;
+                    setFormat = setLeftFormat;
+                    setText = setJsonText;
+                    handleError = (msg) => console.log("Left Diff Error:", msg);
+                } else if (context === 'diff-right') {
+                    text = diffEditorInstance.current?.getValue() || diffText;
+                    currentFormat = rightFormat;
+                    editor = diffEditorInstance.current;
+                    setFormat = setRightFormat;
+                    setText = setDiffText;
+                    handleError = (msg) => console.log("Right Diff Error:", msg);
                 }
-            }, [dataFormat, jsonText, parseCurrentContent, jsonToXml, jsonToYaml, jsonToToml, jsonToIni]);
+
+                if (currentFormat === targetFormat) return;
+
+                const detected = detectContentFormat(text);
+                let shouldConvert = false;
+
+                // 决策逻辑：
+                // 1. 如果检测到的格式与目标格式一致 -> 认为是纠正标签 -> 仅切换，不转换
+                if (detected === targetFormat) {
+                    shouldConvert = false;
+                } else {
+                    // 2. 尝试解析当前内容
+                    try {
+                        parseCurrentContent(text, currentFormat);
+                        // 3. 如果能成功解析，说明当前处于一致状态，用户意图是转换 -> 执行转换
+                        shouldConvert = true;
+                    } catch (e) {
+                        // 4. 如果解析失败，说明当前状态不一致，用户意图是纠正 -> 仅切换
+                        shouldConvert = false;
+                    }
+                }
+
+                if (shouldConvert) {
+                    try {
+                        const obj = parseCurrentContent(text, currentFormat);
+                        let result = '';
+                        switch (targetFormat) {
+                            case 'json': result = JSON.stringify(obj, null, 2); break;
+                            case 'xml': result = jsonToXml(obj); break;
+                            case 'yaml': result = jsonToYaml(obj); break;
+                            case 'toml': result = jsonToToml(obj); break;
+                            case 'ini': result = jsonToIni(obj); break;
+                        }
+
+                        if (editor) editor.setValue(result);
+                        setText(result);
+                        setFormat(targetFormat);
+                        if (editor) {
+                            const model = editor.getModel();
+                            if (model) monaco.editor.setModelLanguage(model, DATA_FORMATS[targetFormat].monacoLang);
+                        }
+                        if (handleError) handleError("");
+                    } catch (err) {
+                        if (handleError) handleError(`转换失败: ${err.message}`);
+                    }
+                } else {
+                    // 仅切换状态
+                    setFormat(targetFormat);
+                    if (editor) {
+                        const model = editor.getModel();
+                        if (model) monaco.editor.setModelLanguage(model, DATA_FORMATS[targetFormat].monacoLang);
+                    }
+                    if (handleError) handleError("");
+                }
+            }, [dataFormat, jsonText, leftFormat, rightFormat, diffText, detectContentFormat, parseCurrentContent, jsonToXml, jsonToYaml, jsonToToml, jsonToIni]);
+
+            // 格式转换函数 (保留用于特定按钮调用，如果有的话，但主要逻辑已移至 handleSmartFormatChange)
+            const convertFormat = useCallback((targetFormat) => {
+                handleSmartFormatChange(targetFormat, 'main');
+            }, [handleSmartFormatChange]);
 
             // ========== 需求3: JSON对比功能 ==========
             const [diffResult, setDiffResult] = useState(null);
@@ -2962,6 +3016,90 @@
                 setJsonStats(prev => ({ ...prev, errorLines: 0 }));
             };
 
+            // 处理文件上传
+            const handleFileUpload = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const fileName = file.name;
+                const fileExt = fileName.split('.').pop().toLowerCase();
+                const target = uploadTargetRef.current;
+
+                // 映射后缀到格式
+                let targetFormat = 'text'; // 默认为文本
+                if (fileExt === 'json') targetFormat = 'json';
+                else if (fileExt === 'xml') targetFormat = 'xml';
+                else if (['yaml', 'yml'].includes(fileExt)) targetFormat = 'yaml';
+                else if (fileExt === 'toml') targetFormat = 'toml';
+                else if (['ini', 'conf', 'cfg', 'properties'].includes(fileExt)) targetFormat = 'ini';
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const content = e.target.result;
+
+                    if (target === 'main') {
+                        // 更新主编辑器（或左侧对比编辑器）
+                        if (!isDiffMode) {
+                            setDataFormat(targetFormat);
+                        } else {
+                            setLeftFormat(targetFormat);
+                        }
+
+                        if (jsonEditorInstance.current) {
+                            jsonEditorInstance.current.setValue(content);
+                            const model = jsonEditorInstance.current.getModel();
+                            if (model) {
+                                monaco.editor.setModelLanguage(model, DATA_FORMATS[targetFormat].monacoLang);
+                            }
+                        }
+                        setJsonText(content);
+                    } else if (target === 'diff') {
+                        // 更新右侧对比编辑器
+                        setRightFormat(targetFormat);
+
+                        if (diffEditorInstance.current) {
+                            diffEditorInstance.current.setValue(content);
+                            const model = diffEditorInstance.current.getModel();
+                            if (model) {
+                                monaco.editor.setModelLanguage(model, DATA_FORMATS[targetFormat].monacoLang);
+                            }
+                        }
+                        setDiffText(content);
+                    } else if (target === 'git-original') {
+                        // Git Diff 左侧
+                         setLeftFormat(targetFormat);
+                         // Git Diff 模式下通常直接更新 text state，由 effect 同步 model
+                         // 但这里还是手动更新 model 比较保险（如果实例存在）
+                         // 注意：Git 模式下的编辑器实例是 gitDiffEditorInstance
+                         // 这里的逻辑可能需要根据 git 模式做特殊处理，但目前 git 模式是基于 jsonText 和 diffText 初始化的
+                         // 且 gitDiffEditorInstance.current.setModel 已经绑定了
+                         setJsonText(content);
+                    } else if (target === 'git-modified') {
+                         // Git Diff 右侧
+                         setRightFormat(targetFormat);
+                         setDiffText(content);
+                    }
+
+                    setError(""); // 清除错误
+                    setFormatErrors([]);
+
+                    // 清除input值，以便允许重复上传同一文件
+                    event.target.value = '';
+                };
+                reader.onerror = (e) => {
+                    setError("文件读取失败");
+                };
+                reader.readAsText(file);
+            };
+
+            // 触发上传辅助函数
+            const triggerUpload = (target) => {
+                uploadTargetRef.current = target;
+                if (fileInputRef.current) {
+                    fileInputRef.current.click();
+                }
+            };
+
             // 复制代码到剪贴板
             const copyCode = () => {
                 if (generatedCode) {
@@ -3052,6 +3190,14 @@
             }, [generatedCode, isCodeGenMode]);
 
             return React.createElement("div", { className: "app-container" },
+                // 隐藏的文件上传输入框
+                React.createElement("input", {
+                    type: "file",
+                    ref: fileInputRef,
+                    style: { display: "none" },
+                    onChange: handleFileUpload,
+                    accept: ".json,.xml,.yaml,.yml,.toml,.ini,.conf,.cfg,.properties,.txt"
+                }),
                 React.createElement("div", { className: "header" },
                     React.createElement("h1", null,
                         React.createElement("i", { className: "fas fa-code" }),
@@ -3411,12 +3557,20 @@
                                 ),
                                 // 需求2：格式转换功能嵌入header栏 - 选择目标格式自动转换
                                 React.createElement("div", { className: "header-conversion-tools" },
+                                    // 新增：上传文件按钮
+                                    React.createElement("button", {
+                                        className: "btn btn-secondary btn-sm",
+                                        onClick: () => triggerUpload('main'),
+                                        title: "上传文件 (支持拖拽或大文件)",
+                                        style: { marginRight: "6px", height: "24px", padding: "0 8px" }
+                                    }, React.createElement("i", { className: "fas fa-upload" }), " 上传"),
+
                                     React.createElement("span", { style: { fontSize: "12px", color: "#94a3b8", marginRight: "4px" } }, "转换为:"),
                                     React.createElement("select", {
                                         className: "format-select compact-select",
                                         value: dataFormat,
-                                        onChange: (e) => convertFormat(e.target.value),
-                                        title: "选择目标格式自动转换"
+                                        onChange: (e) => handleSmartFormatChange(e.target.value, 'main'),
+                                        title: "选择格式 (智能切换/转换)"
                                     },
                                         // 需求1：非对比模式下过滤 text 类型
                                         Object.entries(DATA_FORMATS)
@@ -3514,13 +3668,7 @@
                                     React.createElement("select", {
                                             className: "format-select compact-select",
                                             value: leftFormat,
-                                            onChange: (e) => {
-                                                setLeftFormat(e.target.value);
-                                                if (jsonEditorInstance.current) {
-                                                    const model = jsonEditorInstance.current.getModel();
-                                                    if (model) monaco.editor.setModelLanguage(model, DATA_FORMATS[e.target.value].monacoLang);
-                                                }
-                                            },
+                                            onChange: (e) => handleSmartFormatChange(e.target.value, 'diff-left'),
                                             style: { marginRight: '8px' }
                                         },
                                         Object.entries(DATA_FORMATS).map(([val, conf]) =>
@@ -3530,6 +3678,13 @@
                                     "原始文本"
                                 ),
                                 React.createElement("div", { className: "header-conversion-tools" },
+                                    // 左侧上传按钮
+                                    React.createElement("button", {
+                                        className: "btn btn-secondary btn-sm",
+                                        onClick: () => triggerUpload('main'),
+                                        title: "上传文件",
+                                        style: { marginRight: "4px" }
+                                    }, React.createElement("i", { className: "fas fa-upload" })),
                                     leftFormat !== 'text' && React.createElement("button", {
                                         className: "btn btn-secondary btn-sm",
                                         onClick: () => formatEditorContent(jsonEditorInstance.current, leftFormat, setJsonText),
@@ -3605,13 +3760,7 @@
                                     React.createElement("select", {
                                             className: "format-select compact-select",
                                             value: rightFormat,
-                                            onChange: (e) => {
-                                                setRightFormat(e.target.value);
-                                                if (diffEditorInstance.current) {
-                                                    const model = diffEditorInstance.current.getModel();
-                                                    if (model) monaco.editor.setModelLanguage(model, DATA_FORMATS[e.target.value].monacoLang);
-                                                }
-                                            },
+                                            onChange: (e) => handleSmartFormatChange(e.target.value, 'diff-right'),
                                             style: { marginRight: '8px' }
                                         },
                                         Object.entries(DATA_FORMATS).map(([val, conf]) =>
@@ -3621,6 +3770,13 @@
                                     "对比文本"
                                 ),
                                 React.createElement("div", { className: "header-conversion-tools" },
+                                    // 右侧上传按钮
+                                    React.createElement("button", {
+                                        className: "btn btn-secondary btn-sm",
+                                        onClick: () => triggerUpload('diff'),
+                                        title: "上传文件",
+                                        style: { marginRight: "4px" }
+                                    }, React.createElement("i", { className: "fas fa-upload" })),
                                     rightFormat !== 'text' && React.createElement("button", {
                                         className: "btn btn-secondary btn-sm",
                                         onClick: () => formatEditorContent(diffEditorInstance.current, rightFormat, setDiffText),
