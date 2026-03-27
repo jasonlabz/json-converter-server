@@ -3,7 +3,7 @@ WORKDIR := $(shell pwd)
 OUTDIR := $(WORKDIR)/output
 
 # 目标二进制名称
-TARGETNAME = json-converter-server
+TARGETNAME = jsonc
 
 GOPKGS := $$(go list ./.. | grep -vE "vendor")
 
@@ -38,7 +38,7 @@ package:
 	$(shell cp -a bin $(OUTDIR)/bin)
 	$(shell cp -a conf $(OUTDIR)/conf)
 	$(shell if [ -d "data" ]; then cp -r data $(OUTDIR)/data; fi)
-	$(shell if [ -d "script" ]; then cp -r script $(OUTDIR)/script; fi)
+	$(shell if [ -d "static" ]; then cp -r static $(OUTDIR)/static; fi)
 	$(shell if [ -d "webroot" ]; then cp -r webroot $(OUTDIR)/; fi)
 	tree $(OUTDIR)
 
