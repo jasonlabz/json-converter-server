@@ -854,6 +854,115 @@
             border-bottom: none;
         }
 
+        .schema-panel {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(96, 165, 250, 0.25);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 8px;
+        }
+
+        .schema-panel-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            color: #bfdbfe;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .schema-panel-header span {
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        .schema-input {
+            width: 100%;
+            min-height: 120px;
+            resize: vertical;
+            background: #0f172a;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+
+        .schema-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .schema-error {
+            color: #f87171;
+            font-size: 12px;
+        }
+
+        .problems-panel {
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid rgba(248, 113, 113, 0.22);
+            border-radius: 8px;
+            padding: 8px;
+            margin-top: 8px;
+            font-size: 11px;
+        }
+
+        .problems-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #fca5a5;
+            margin-bottom: 6px;
+        }
+
+        .problems-title span {
+            color: #94a3b8;
+        }
+
+        .problem-item {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 58px 72px 1fr;
+            gap: 8px;
+            align-items: center;
+            background: transparent;
+            border: none;
+            border-top: 1px solid rgba(148, 163, 184, 0.12);
+            color: #cbd5e1;
+            padding: 5px 0;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .problem-item:hover {
+            background: rgba(96, 165, 250, 0.08);
+        }
+
+        .problem-error {
+            color: #f87171;
+            font-weight: 600;
+        }
+
+        .problem-warning {
+            color: #fbbf24;
+            font-weight: 600;
+        }
+
+        .problem-message {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .problem-more {
+            color: #94a3b8;
+            padding-top: 4px;
+        }
+
         /* 新增：对比模式样式 */
         .diff-panel {
             flex: 1;
@@ -1059,9 +1168,19 @@
         }
     });
 
-    // 等待Monaco加载完成后执行
+        // 等待Monaco加载完成后执行
     require(["vs/editor/editor.main"], function () {
         const { useState, useEffect, useRef, useCallback } = React;
+
+        if (monaco.languages.json?.jsonDefaults) {
+            monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+                validate: true,
+                allowComments: true,
+                trailingCommas: "warning",
+                enableSchemaRequest: false,
+                schemas: []
+            });
+        }
 
         // 语言配置 (使用 FontAwesome 图标以确保跨平台兼容性)
         const LANGUAGE_CONFIG = {
@@ -1311,6 +1430,12 @@
             const [timeFieldsDetected, setTimeFieldsDetected] = useState(0);
             const [generationInfo, setGenerationInfo] = useState(null);
             const [formatErrors, setFormatErrors] = useState([]); // 新增：格式化错误信息
+            const [diagnostics, setDiagnostics] = useState([]);
+            const [showSchemaPanel, setShowSchemaPanel] = useState(false);
+            const [schemaText, setSchemaText] = useState('');
+            const [schemaError, setSchemaError] = useState('');
+            const [wordWrapEnabled, setWordWrapEnabled] = useState(false);
+            const [strictFormat, setStrictFormat] = useState(false);
 
             const jsonEditorRef = useRef(null);
             const jsonEditorInstance = useRef(null);
@@ -1332,6 +1457,99 @@
                     forceMoveMarkers: true
                 }]);
                 editor.pushUndoStop();
+            }, []);
+
+            const updateJsonDiagnosticsOptions = useCallback((schemas = []) => {
+                if (!monaco.languages.json?.jsonDefaults) return;
+                monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+                    validate: true,
+                    allowComments: true,
+                    trailingCommas: "warning",
+                    enableSchemaRequest: false,
+                    schemas
+                });
+            }, []);
+
+            const syncDiagnostics = useCallback(() => {
+                const editors = [
+                    { editor: jsonEditorInstance.current, source: "输入" },
+                    { editor: diffEditorInstance.current, source: "对比" }
+                ];
+
+                const nextDiagnostics = editors.flatMap(({ editor, source }) => {
+                    const model = editor?.getModel();
+                    if (!model) return [];
+                    return monaco.editor.getModelMarkers({ resource: model.uri }).map(marker => ({
+                        source,
+                        message: marker.message,
+                        severity: marker.severity,
+                        line: marker.startLineNumber,
+                        column: marker.startColumn,
+                        editor
+                    }));
+                });
+
+                setDiagnostics(nextDiagnostics);
+                setJsonStats(prev => ({ ...prev, errorLines: nextDiagnostics.filter(item => item.source === "输入").length }));
+            }, []);
+
+            const addEditorCommands = useCallback((editor) => {
+                if (!editor) return;
+                editor.addCommand(monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, () => {
+                    const model = editor.getModel();
+                    if (!model) return;
+                    if (model.getLanguageId() === 'json') {
+                        try {
+                            const parsed = JSON.parse(model.getValue());
+                            replaceEditorValue(editor, JSON.stringify(parsed, null, 2));
+                        } catch (err) {
+                            editor.getAction('editor.action.formatDocument')?.run();
+                        }
+                    } else {
+                        editor.getAction('editor.action.formatDocument')?.run();
+                    }
+                });
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyG, () => editor.getAction('editor.action.gotoLine')?.run());
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.BracketLeft, () => editor.getAction('editor.foldAll')?.run());
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.BracketRight, () => editor.getAction('editor.unfoldAll')?.run());
+            }, [replaceEditorValue]);
+
+            const toggleWordWrap = useCallback(() => {
+                setWordWrapEnabled(prev => {
+                    const next = !prev;
+                    [jsonEditorInstance.current, diffEditorInstance.current, codeEditorInstance.current].forEach(editor => {
+                        if (editor) editor.updateOptions({ wordWrap: next ? "on" : "off" });
+                    });
+                    return next;
+                });
+            }, []);
+
+            const applyLocalSchema = useCallback(() => {
+                if (!schemaText.trim()) {
+                    updateJsonDiagnosticsOptions([]);
+                    setSchemaError('');
+                    return;
+                }
+
+                try {
+                    const schema = JSON.parse(schemaText);
+                    updateJsonDiagnosticsOptions([{
+                        uri: "inmemory://json-converter/local-schema.json",
+                        fileMatch: ["*"],
+                        schema
+                    }]);
+                    setSchemaError('');
+                    setTimeout(syncDiagnostics, 0);
+                } catch (err) {
+                    setSchemaError(`Schema 解析失败: ${err.message}`);
+                }
+            }, [schemaText, syncDiagnostics, updateJsonDiagnosticsOptions]);
+
+            const jumpToDiagnostic = useCallback((diagnostic) => {
+                if (!diagnostic.editor) return;
+                diagnostic.editor.focus();
+                diagnostic.editor.revealPositionInCenter({ lineNumber: diagnostic.line, column: diagnostic.column });
+                diagnostic.editor.setPosition({ lineNumber: diagnostic.line, column: diagnostic.column });
             }, []);
 
             // 改进的数组合并工具函数：生成包含所有字段并集的超级对象，并置于数组首位
@@ -1493,6 +1711,8 @@
                     });
 
                     // 监听内容变化
+                    addEditorCommands(jsonEditorInstance.current);
+
                     jsonEditorInstance.current.onDidChangeModelContent(() => {
                         const value = jsonEditorInstance.current.getValue();
                         setJsonText(value);
@@ -1501,6 +1721,7 @@
                         const chars = value.length;
                         const commentLines = (value.match(/\/\/.*$/g) || []).length;
                         setJsonStats(prev => ({ ...prev, lines, chars, commentLines }));
+                        setTimeout(syncDiagnostics, 0);
                     });
                 }
 
@@ -1527,6 +1748,7 @@
                                 columnSelection: false,
                                 padding: { bottom: 16 }
                     });
+                    addEditorCommands(codeEditorInstance.current);
                 }
 
                 return () => {
@@ -2162,9 +2384,11 @@
                                 columnSelection: false,
                                 padding: { bottom: 16 }
                             });
+                            addEditorCommands(jsonEditorInstance.current);
                             jsonEditorInstance.current.onDidChangeModelContent(() => {
                                 const value = jsonEditorInstance.current.getValue();
                                 setJsonText(value);
+                                setTimeout(syncDiagnostics, 0);
                             });
                         }
 
@@ -2186,9 +2410,11 @@
                                 columnSelection: false,
                                 padding: { bottom: 16 }
                             });
+                            addEditorCommands(diffEditorInstance.current);
                             diffEditorInstance.current.onDidChangeModelContent(() => {
                                 const value = diffEditorInstance.current.getValue();
                                 setDiffText(value);
+                                setTimeout(syncDiagnostics, 0);
                             });
                         }
                     } else {
@@ -2541,7 +2767,8 @@
                     fallbackText = jsonText,
                     setTextFunc = setJsonText,
                     setErrorFunc = setError,
-                    enableErrorMarkers = true
+                    enableErrorMarkers = true,
+                    repair = true
                 } = options;
 
                 try {
@@ -2602,6 +2829,7 @@
                         if (enableErrorMarkers) setFormatErrors([]);
                         return;
                     } catch (e) {
+                        if (!repair) throw e;
                         // Parse 失败，继续尝试修复
                     }
 
@@ -2733,6 +2961,12 @@
                     if (setErrorFunc) setErrorFunc(errorMsg);
                 }
             }, [jsonText, setJsonText, setError, replaceEditorValue]);
+
+            useEffect(() => {
+                const disposable = monaco.editor.onDidChangeMarkers(syncDiagnostics);
+                setTimeout(syncDiagnostics, 0);
+                return () => disposable.dispose();
+            }, [syncDiagnostics]);
 
             // 需求3：中文转Unicode功能
             const convertChineseToUnicode = useCallback(() => {
@@ -2969,7 +3203,7 @@
             // 通用格式化函数
             const formatJson = () => {
                 if (dataFormat === 'json') {
-                    formatJsonIntelligently();
+                    formatJsonIntelligently({ repair: !strictFormat });
                 } else {
                     // 其他格式，通过 parse -> stringify 循环来格式化
                     // 或者 XML 有自己的格式化逻辑？目前先利用转换逻辑
@@ -3374,8 +3608,13 @@
                                             React.createElement("button", {
                                                 className: "btn btn-secondary btn-compact",
                                                 onClick: formatJson,
-                                                title: "智能格式化"
-                                            }, React.createElement("i", { className: "fas fa-indent" }), "格式化"),
+                                                title: strictFormat ? "严格格式化 (Shift+Alt+F)" : "智能修复并格式化 (Shift+Alt+F)"
+                                            }, React.createElement("i", { className: "fas fa-indent" }), strictFormat ? "严格格式化" : "智能格式化"),
+                                            React.createElement("button", {
+                                                className: strictFormat ? "btn btn-primary btn-compact" : "btn btn-secondary btn-compact",
+                                                onClick: () => setStrictFormat(prev => !prev),
+                                                title: "切换严格格式化/智能修复"
+                                            }, React.createElement("i", { className: "fas fa-shield-alt" }), strictFormat ? "严格" : "修复"),
                                             React.createElement("button", {
                                                 className: "btn btn-secondary btn-compact",
                                                 onClick: removeComments,
@@ -3434,6 +3673,18 @@
                                     ),
 
                                     // 代码生成按钮 (在开启代码生成且非对比模式下)
+                                    React.createElement("button", {
+                                        className: showSchemaPanel ? "btn btn-primary btn-compact" : "btn btn-secondary btn-compact",
+                                        onClick: () => setShowSchemaPanel(prev => !prev),
+                                        title: "离线 Schema 校验"
+                                    }, React.createElement("i", { className: "fas fa-clipboard-check" }), "Schema"),
+                                    React.createElement("button", {
+                                        className: wordWrapEnabled ? "btn btn-primary btn-compact" : "btn btn-secondary btn-compact",
+                                        onClick: toggleWordWrap,
+                                        title: "切换自动换行"
+                                    }, React.createElement("i", { className: "fas fa-align-left" }), "换行"),
+
+                                    // 代码生成按钮 (在开启代码生成且非对比模式下)
                                     isCodeGenMode && React.createElement("button", {
                                             className: "btn btn-primary btn-compact",
                                             onClick: generateCode,
@@ -3458,6 +3709,35 @@
                                 React.createElement("span", { className: "switch-label" },
                                     "对比模式"
                                 )
+                            )
+                        ),
+
+                        showSchemaPanel && React.createElement("div", { className: "schema-panel" },
+                            React.createElement("div", { className: "schema-panel-header" },
+                                React.createElement("strong", null, "离线 JSON Schema"),
+                                React.createElement("span", null, "粘贴 schema 后在本地完成补全、Hover 和校验，不发起网络请求")
+                            ),
+                            React.createElement("textarea", {
+                                className: "schema-input",
+                                value: schemaText,
+                                onChange: (e) => setSchemaText(e.target.value),
+                                placeholder: '{\n  "type": "object",\n  "required": ["name"],\n  "properties": {\n    "name": { "type": "string", "description": "名称" }\n  }\n}'
+                            }),
+                            React.createElement("div", { className: "schema-actions" },
+                                React.createElement("button", {
+                                    className: "btn btn-primary btn-sm",
+                                    onClick: applyLocalSchema
+                                }, "应用 Schema"),
+                                React.createElement("button", {
+                                    className: "btn btn-secondary btn-sm",
+                                    onClick: () => {
+                                        setSchemaText('');
+                                        setSchemaError('');
+                                        updateJsonDiagnosticsOptions([]);
+                                        setTimeout(syncDiagnostics, 0);
+                                    }
+                                }, "清除 Schema"),
+                                schemaError && React.createElement("span", { className: "schema-error" }, schemaError)
                             )
                         ),
 
@@ -3627,6 +3907,29 @@
                                 React.createElement("div", { key: index }, warning)
                             )
                         )
+                    ),
+
+                    diagnostics.length > 0 && React.createElement("div", { className: "problems-panel" },
+                        React.createElement("div", { className: "problems-title" },
+                            React.createElement("i", { className: "fas fa-bug" }),
+                            React.createElement("strong", null, `问题 ${diagnostics.length}`),
+                            React.createElement("span", null, "点击可跳转，来源于 Monaco 离线 JSON 语言服务")
+                        ),
+                        diagnostics.slice(0, 8).map((item, index) =>
+                            React.createElement("button", {
+                                key: index,
+                                className: "problem-item",
+                                onClick: () => jumpToDiagnostic(item),
+                                title: item.message
+                            },
+                                React.createElement("span", { className: item.severity === monaco.MarkerSeverity.Error ? "problem-error" : "problem-warning" },
+                                    item.severity === monaco.MarkerSeverity.Error ? "Error" : "Warning"
+                                ),
+                                React.createElement("span", null, `${item.source} ${item.line}:${item.column}`),
+                                React.createElement("span", { className: "problem-message" }, item.message)
+                            )
+                        ),
+                        diagnostics.length > 8 && React.createElement("div", { className: "problem-more" }, `... 还有 ${diagnostics.length - 8} 个问题`)
                     ),
 
                     // 显示格式化错误详细信息
