@@ -1317,6 +1317,23 @@
             const codeEditorRef = useRef(null);
             const codeEditorInstance = useRef(null);
 
+            const replaceEditorValue = useCallback((editor, value) => {
+                if (!editor) return;
+                const model = editor.getModel();
+                if (!model) {
+                    editor.setValue(value);
+                    return;
+                }
+
+                editor.pushUndoStop();
+                editor.executeEdits("replace-content", [{
+                    range: model.getFullModelRange(),
+                    text: value,
+                    forceMoveMarkers: true
+                }]);
+                editor.pushUndoStop();
+            }, []);
+
             // 改进的数组合并工具函数：生成包含所有字段并集的超级对象，并置于数组首位
             const mergeArrayItems = useCallback((array) => {
                 if (!array || !Array.isArray(array) || array.length === 0) return array;
@@ -2086,7 +2103,7 @@
                             case 'ini': result = jsonToIni(obj); break;
                         }
 
-                        if (editor) editor.setValue(result);
+                        if (editor) replaceEditorValue(editor, result);
                         setText(result);
                         setFormat(targetFormat);
                         if (editor) {
@@ -2106,7 +2123,7 @@
                     }
                     if (handleError) handleError("");
                 }
-            }, [dataFormat, jsonText, leftFormat, rightFormat, diffText, detectContentFormat, parseCurrentContent, jsonToXml, jsonToYaml, jsonToToml, jsonToIni]);
+            }, [dataFormat, jsonText, leftFormat, rightFormat, diffText, detectContentFormat, parseCurrentContent, jsonToXml, jsonToYaml, jsonToToml, jsonToIni, replaceEditorValue]);
 
             // 格式转换函数 (保留用于特定按钮调用，如果有的话，但主要逻辑已移至 handleSmartFormatChange)
             const convertFormat = useCallback((targetFormat) => {
@@ -2423,7 +2440,7 @@
                     else if (format === 'toml') formatted = jsonToToml(obj);
                     else if (format === 'ini') formatted = jsonToIni(obj);
 
-                    editorInstance.setValue(formatted);
+                    replaceEditorValue(editorInstance, formatted);
                     if (setTextFunc) setTextFunc(formatted);
                 } catch (e) {
                     console.error("Format error", e);
@@ -2579,7 +2596,7 @@
                         const cleanedValue = safeRemoveComments(jsonValue);
                         const parsed = JSON.parse(cleanedValue);
                         const formatted = JSON.stringify(parsed, null, 2);
-                        if (editorInstance) editorInstance.setValue(formatted);
+                        if (editorInstance) replaceEditorValue(editorInstance, formatted);
                         if (setTextFunc) setTextFunc(formatted);
                         if (setErrorFunc) setErrorFunc("");
                         if (enableErrorMarkers) setFormatErrors([]);
@@ -2632,7 +2649,7 @@
                         const cleanedValue = safeRemoveComments(fixed);
                         const parsed = JSON.parse(cleanedValue);
                         const formatted = JSON.stringify(parsed, null, 2);
-                        if (editorInstance) editorInstance.setValue(formatted);
+                        if (editorInstance) replaceEditorValue(editorInstance, formatted);
                         if (setTextFunc) setTextFunc(formatted);
                         if (setErrorFunc) setErrorFunc(""); // 修复成功
                         if (enableErrorMarkers) setFormatErrors([]);
@@ -2643,7 +2660,7 @@
 
                     // 4. 最后的手段：软格式化 (使用修复后的文本)
                     const softFormatted = softFormatJson(fixed);
-                    if (editorInstance) editorInstance.setValue(softFormatted);
+                    if (editorInstance) replaceEditorValue(editorInstance, softFormatted);
                     if (setTextFunc) setTextFunc(softFormatted);
 
                     // 尝试解析 softFormatted 以发现具体的语法错误并抛出
@@ -2715,7 +2732,7 @@
 
                     if (setErrorFunc) setErrorFunc(errorMsg);
                 }
-            }, [jsonText, setJsonText, setError]);
+            }, [jsonText, setJsonText, setError, replaceEditorValue]);
 
             // 需求3：中文转Unicode功能
             const convertChineseToUnicode = useCallback(() => {
@@ -2724,7 +2741,7 @@
                     const converted = chineseToUnicode(jsonValue);
 
                     if (jsonEditorInstance.current) {
-                        jsonEditorInstance.current.setValue(converted);
+                        replaceEditorValue(jsonEditorInstance.current, converted);
                     }
                     setJsonText(converted);
                     setError("");
@@ -2732,7 +2749,7 @@
                 } catch (err) {
                     setError(`中文转Unicode错误: ${err.message}`);
                 }
-            }, [jsonText, chineseToUnicode]);
+            }, [jsonText, chineseToUnicode, replaceEditorValue]);
 
             // 需求3：Unicode转中文功能
             const convertUnicodeToChinese = useCallback(() => {
@@ -2741,7 +2758,7 @@
                     const converted = unicodeToChinese(jsonValue);
 
                     if (jsonEditorInstance.current) {
-                        jsonEditorInstance.current.setValue(converted);
+                        replaceEditorValue(jsonEditorInstance.current, converted);
                     }
                     setJsonText(converted);
                     setError("");
@@ -2749,7 +2766,7 @@
                 } catch (err) {
                     setError(`Unicode转中文错误: ${err.message}`);
                 }
-            }, [jsonText, unicodeToChinese]);
+            }, [jsonText, unicodeToChinese, replaceEditorValue]);
 
             // 清理JSON：移除注释并格式化
             const cleanJson = useCallback((jsonString) => {
@@ -2965,7 +2982,7 @@
                         else if (dataFormat === 'toml') formatted = jsonToToml(obj);
                         else if (dataFormat === 'ini') formatted = jsonToIni(obj);
 
-                        if (jsonEditorInstance.current) jsonEditorInstance.current.setValue(formatted);
+                        if (jsonEditorInstance.current) replaceEditorValue(jsonEditorInstance.current, formatted);
                         setJsonText(formatted);
                         setError(""); // 需求1: 成功不显示提示
                     } catch (e) {
@@ -2981,7 +2998,7 @@
                     const minified = JSON.stringify(obj);
 
                     if (jsonEditorInstance.current) {
-                        jsonEditorInstance.current.setValue(minified);
+                        replaceEditorValue(jsonEditorInstance.current, minified);
                     }
                     setJsonText(minified);
                     setError("");
@@ -2998,7 +3015,7 @@
                     const escaped = JSON.stringify(jsonValue);
 
                     if (jsonEditorInstance.current) {
-                        jsonEditorInstance.current.setValue(escaped);
+                        replaceEditorValue(jsonEditorInstance.current, escaped);
                     }
                     setJsonText(escaped);
                     setError("");
@@ -3015,7 +3032,7 @@
                     const unescaped = JSON.parse(jsonValue);
 
                     if (jsonEditorInstance.current) {
-                        jsonEditorInstance.current.setValue(unescaped);
+                        replaceEditorValue(jsonEditorInstance.current, unescaped);
                     }
                     setJsonText(unescaped);
                     setError("");
@@ -3067,7 +3084,7 @@
                     const cleaned = removeJsonComments(jsonValue);
 
                     if (jsonEditorInstance.current) {
-                        jsonEditorInstance.current.setValue(cleaned);
+                        replaceEditorValue(jsonEditorInstance.current, cleaned);
                     }
                     setJsonText(cleaned);
                     setError("");
@@ -3081,10 +3098,10 @@
             // 需求2和3：清空功能，同时清空JSON框和代码框
             const clearAll = () => {
                 if (jsonEditorInstance.current) {
-                    jsonEditorInstance.current.setValue('');
+                    replaceEditorValue(jsonEditorInstance.current, '');
                 }
                 if (codeEditorInstance.current) {
-                    codeEditorInstance.current.setValue('');
+                    replaceEditorValue(codeEditorInstance.current, '');
                 }
                 setJsonText('');
                 setGeneratedCode('');
@@ -3098,7 +3115,7 @@
 
             const loadComplexJson = () => {
                 if (jsonEditorInstance.current) {
-                    jsonEditorInstance.current.setValue(COMPLEX_JSON);
+                    replaceEditorValue(jsonEditorInstance.current, COMPLEX_JSON);
                 }
                 setJsonText(COMPLEX_JSON);
                 setError("");
@@ -3137,7 +3154,7 @@
                         }
 
                         if (jsonEditorInstance.current) {
-                            jsonEditorInstance.current.setValue(content);
+                            replaceEditorValue(jsonEditorInstance.current, content);
                             const model = jsonEditorInstance.current.getModel();
                             if (model) {
                                 monaco.editor.setModelLanguage(model, DATA_FORMATS[targetFormat].monacoLang);
@@ -3149,7 +3166,7 @@
                         setRightFormat(targetFormat);
 
                         if (diffEditorInstance.current) {
-                            diffEditorInstance.current.setValue(content);
+                            replaceEditorValue(diffEditorInstance.current, content);
                             const model = diffEditorInstance.current.getModel();
                             if (model) {
                                 monaco.editor.setModelLanguage(model, DATA_FORMATS[targetFormat].monacoLang);
@@ -3784,7 +3801,7 @@
                                             React.createElement("button", {
                                                 className: "btn btn-secondary btn-sm",
                                                 onClick: () => {
-                                                    if (jsonEditorInstance.current) jsonEditorInstance.current.setValue('');
+                                                    if (jsonEditorInstance.current) replaceEditorValue(jsonEditorInstance.current, '');
                                                     setJsonText('');
                                                 },
                                                 title: "清空"
@@ -3876,7 +3893,7 @@
                                             React.createElement("button", {
                                                 className: "btn btn-secondary btn-sm",
                                                 onClick: () => {
-                                                    if (diffEditorInstance.current) diffEditorInstance.current.setValue('');
+                                                    if (diffEditorInstance.current) replaceEditorValue(diffEditorInstance.current, '');
                                                     setDiffText('');
                                                 },
                                                 title: "清空"
