@@ -494,6 +494,18 @@
             flex: 1;
         }
 
+        .json-panel:fullscreen {
+            display: flex;
+            flex-direction: column;
+            width: 100vw;
+            height: 100vh;
+            background: #0f172a;
+        }
+
+        .json-panel:fullscreen .panel-content {
+            min-height: 0;
+        }
+
         .code-panel {
             flex: 1;
             opacity: 1;
@@ -1436,7 +1448,9 @@
             const [schemaError, setSchemaError] = useState('');
             const [wordWrapEnabled, setWordWrapEnabled] = useState(false);
             const [strictFormat, setStrictFormat] = useState(false);
+            const [isJsonFullscreen, setIsJsonFullscreen] = useState(false);
 
+            const jsonPanelRef = useRef(null);
             const jsonEditorRef = useRef(null);
             const jsonEditorInstance = useRef(null);
             const codeEditorRef = useRef(null);
@@ -1522,6 +1536,25 @@
                     });
                     return next;
                 });
+            }, []);
+
+            const toggleJsonFullscreen = useCallback(() => {
+                if (!jsonPanelRef.current) return;
+                if (document.fullscreenElement) {
+                    document.exitFullscreen?.();
+                } else {
+                    jsonPanelRef.current.requestFullscreen?.();
+                }
+            }, []);
+
+            useEffect(() => {
+                const handleFullscreenChange = () => {
+                    setIsJsonFullscreen(document.fullscreenElement === jsonPanelRef.current);
+                    setTimeout(() => jsonEditorInstance.current?.layout(), 0);
+                };
+
+                document.addEventListener("fullscreenchange", handleFullscreenChange);
+                return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
             }, []);
 
             const applyLocalSchema = useCallback(() => {
@@ -3964,6 +3997,7 @@
 
                 React.createElement("div", { className: "editor-panels" },
                     !isDiffMode && React.createElement("div", {
+                            ref: jsonPanelRef,
                             className: `panel ${isCodeGenMode ? 'json-panel partial-width' : 'json-panel full-width'}`
                         },
                         React.createElement("div", { className: "panel-header" },
@@ -4011,6 +4045,15 @@
                                     React.createElement("span", { style: { marginLeft: "8px", color: "#f87171" } },
                                         `${jsonStats.errorLines} 错误`
                                     )
+                                ),
+                                React.createElement("button", {
+                                    className: "btn btn-secondary btn-sm",
+                                    onClick: toggleJsonFullscreen,
+                                    title: isJsonFullscreen ? "退出全屏 (Esc)" : "全屏查看",
+                                    "aria-label": isJsonFullscreen ? "退出全屏" : "全屏查看"
+                                },
+                                    React.createElement("i", { className: isJsonFullscreen ? "fas fa-compress" : "fas fa-expand" }),
+                                    isJsonFullscreen ? "退出全屏" : "全屏"
                                 )
                             )
                         ),
